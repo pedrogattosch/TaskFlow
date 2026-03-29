@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="DTOs\Auth\" />
+    <Folder Include="DTOs\Categories\" />
+    <Folder Include="DTOs\Tasks\" />
+    <Folder Include="Interfaces\Auth\" />
+    <Folder Include="Interfaces\Services\" />
+    <Folder Include="UseCases\Auth\LoginUser\" />
+    <Folder Include="UseCases\Auth\RegisterUser\" />
+    <Folder Include="UseCases\Categories\CreateCategory\" />
+    <Folder Include="UseCases\Categories\GetCategories\" />
+    <Folder Include="UseCases\Dashboard\GetSummary\" />
+    <Folder Include="UseCases\Tasks\CreateTask\" />
+    <Folder Include="UseCases\Tasks\DeleteTask\" />
+    <Folder Include="UseCases\Tasks\GetTaskById\" />
+    <Folder Include="UseCases\Tasks\GetTasks\" />
+    <Folder Include="UseCases\Tasks\ChangeTaskStatus\" />
+    <Folder Include="UseCases\Tasks\UpdateTask\" />
+    <Folder Include="Validators\Auth\" />
+    <Folder Include="Validators\Categories\" />
+    <Folder Include="Validators\Tasks\" />
+  </ItemGroup>
+
+</Project>
