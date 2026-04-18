@@ -11,7 +11,11 @@ public class Category
     public string? Color { get; private set; }
     public AuditInfo AuditInfo { get; private set; }
 
-    protected Category() { }
+    protected Category()
+    {
+        Name = string.Empty;
+        AuditInfo = new AuditInfo();
+    }
 
     public Category(Guid userId, string name, string? color = null)
     {

@@ -11,7 +11,13 @@ public class User
     public string PasswordHash { get; private set; }
     public AuditInfo AuditInfo { get; private set; }
 
-    protected User() { }
+    protected User()
+    {
+        Name = string.Empty;
+        Email = string.Empty;
+        PasswordHash = string.Empty;
+        AuditInfo = new AuditInfo();
+    }
 
     public User(string name, string email, string passwordHash)
     {

@@ -1,11 +1,11 @@
-﻿using TaskFlow.Domain.Entities;
+using TaskFlow.Domain.Entities;
 
 namespace TaskFlow.Domain.Interfaces;
 
 public interface IUserRepository
 {
-    Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
-    Task AddAsync(User user, CancellationToken cancellationToken = default);
-    Task UpdateAsync(User user, CancellationToken cancellationToken = default);
+    System.Threading.Tasks.Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    System.Threading.Tasks.Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
+    System.Threading.Tasks.Task AddAsync(User user, CancellationToken cancellationToken = default);
+    System.Threading.Tasks.Task UpdateAsync(User user, CancellationToken cancellationToken = default);
 }
