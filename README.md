@@ -1,88 +1,57 @@
 # TaskFlow
 
-O **TaskFlow** é um sistema web para gerenciamento de tarefas que permite ao usuário:
-* Criar e organizar tarefas;
-* Definir prioridades e prazos;
-* Acompanhar status;
-* Filtrar e visualizar progresso.
-  
----
-## ⚙️ Tecnologias
+Sistema web para gerenciamento de tarefas, desenvolvido com .NET, React e SQL Server.
+
+## Objetivo
+Permitir o cadastro, organização, acompanhamento e conclusão de tarefas de forma simples e eficiente, servindo também como projeto de portfólio.
+
+## Stack
+- Back-end: .NET
+- Front-end: React
+- Banco de dados: SQL Server
+- Autenticação: JWT
+
+## Estrutura do projeto
+
+```text
+TaskFlow/
+├─ docs/
+├─ src/
+│  ├─ TaskFlow.Domain/
+│  ├─ TaskFlow.Application/
+│  ├─ TaskFlow.Infrastructure/
+│  ├─ TaskFlow.CrossCutting/
+│  └─ TaskFlow.API/
+├─ tests/
+│  ├─ TaskFlow.UnitTests/
+│  └─ TaskFlow.IntegrationTests/
+├─ web/
+│  └─ taskflow-web/
+└─ README.md
+```
+
+## Documentação
+- `docs/vision.md`
+- `docs/architecture.md`
+- `docs/backlog.md`
+
+## Execução do projeto
 
 ### Back-end
 
-* .NET / ASP.NET Core
-* Entity Framework Core
-* SQL Server
-* JWT Authentication
-
-### Front-end
-
-* React
-* TypeScript
-
----
-
-## 🚀 Funcionalidades
-
-* Cadastro e autenticação de usuários;
-* CRUD de tarefas;
-* Definição de prioridade e prazo;
-* Alteração de status:
-  * Pendente;
-  * Em andamento;
-  * Concluída;
-  * Cancelada.
-* Filtros por:
-  * Status;
-  * Prioridade;
-  * Categoria;
-  * Datas.
-* Dashboard com resumo de tarefas;
-* Exclusão lógica;
-
----
-
-## 📁 Estrutura do projeto
-
-```bash
-TaskFlow/
-├── backend/
-│   ├── TaskFlow.API
-│   ├── TaskFlow.Application
-│   ├── TaskFlow.Domain
-│   ├── TaskFlow.Infrastructure
-│   ├── TaskFlow.UnitTests
-│   ├── TaskFlow.IntegrationTests
-│   └── TaskFlow.slnx
-│
-├── frontend/
-│   └── taskflow-web
-│
-└──── docs/
-    └── vision-and-architecture.md
-```
-
----
-
-## ▶️ Como executar o projeto
-
-### 🔹 Back-end
-
 ```bash
 cd backend/TaskFlow.API
+dotnet restore
 dotnet run
 ```
 
-### 🔹 Front-end
+### Front-end
 
 ```bash
-cd frontend/taskflow-web
+cd frontend
 npm install
 npm run dev
 ```
 
-## 📚 Documentação
-
-A documentação completa do projeto está disponível em: `docs/vision-and-architecture.md`
-
+## Status
+Em desenvolvimento...
