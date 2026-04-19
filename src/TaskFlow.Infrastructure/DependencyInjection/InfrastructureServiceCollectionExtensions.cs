@@ -38,9 +38,12 @@ public static class InfrastructureServiceCollectionExtensions
         });
 
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ITaskRepository, TaskRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<IJwtTokenGenerator, HmacJwtTokenGenerator>();
+        services.AddSingleton<IJwtTokenValidator, HmacJwtTokenValidator>();
 
         return services;
     }
