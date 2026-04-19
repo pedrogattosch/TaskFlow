@@ -3,6 +3,13 @@ export type LoginCredentials = {
   password: string;
 };
 
+export type RegisterCredentials = {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
+
 export type AuthResponse = {
   userId: string;
   name: string;

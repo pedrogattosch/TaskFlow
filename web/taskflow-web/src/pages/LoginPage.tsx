@@ -38,6 +38,9 @@ export function LoginPage() {
             Acesse seu espaço para organizar as tarefas, acompanhar os prazos e manter o trabalho em
             movimento.
           </p>
+          <p className="login-page__secondary-action">
+            Ainda não tem conta? <a href="/register">Criar conta</a>
+          </p>
         </div>
 
         <LoginForm errorMessage={errorMessage} isLoading={isLoading} onSubmit={handleLogin} />

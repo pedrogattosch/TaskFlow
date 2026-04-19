@@ -70,6 +70,23 @@ input {
   line-height: 1.7;
 }
 
+.login-page__secondary-action {
+  margin: 24px 0 0;
+  color: #4f5b61;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.login-page__secondary-action a {
+  color: #295660;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.login-page__secondary-action a:hover {
+  text-decoration: underline;
+}
+
 .login-form {
   width: 100%;
   display: grid;
