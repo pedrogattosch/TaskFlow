@@ -2,25 +2,32 @@ using TaskFlow.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-builder.Services.AddInfrastructure(builder.Configuration);
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+ConfigureServices(builder);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
+ConfigurePipeline(app);
 
 app.Run();
+
+static void ConfigureServices(WebApplicationBuilder builder)
+{
+    var services = builder.Services;
+
+    services.AddControllers();
+    services.AddOpenApi();
+
+    services.AddInfrastructure(builder.Configuration);
+}
+
+static void ConfigurePipeline(WebApplication app)
+{
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi();
+    }
+
+    app.UseHttpsRedirection();
+
+    app.MapControllers();
+}
