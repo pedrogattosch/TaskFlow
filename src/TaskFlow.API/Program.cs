@@ -16,7 +16,8 @@ static void ConfigureServices(WebApplicationBuilder builder)
     var services = builder.Services;
 
     services.AddControllers();
-    services.AddOpenApi();
+    services.AddEndpointsApiExplorer();
+    services.AddSwaggerGen();
 
     services.AddApplication();
     services.AddInfrastructure(builder.Configuration);
@@ -26,7 +27,8 @@ static void ConfigurePipeline(WebApplication app)
 {
     if (app.Environment.IsDevelopment())
     {
-        app.MapOpenApi();
+        app.UseSwagger();
+        app.UseSwaggerUI();
     }
 
     app.UseHttpsRedirection();
