@@ -15,6 +15,10 @@ export class HttpClientError extends Error {
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '/api';
 
+type RequestOptions = {
+  accessToken?: string;
+};
+
 export async function postJson<TResponse, TBody>(path: string, body: TBody): Promise<TResponse> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     method: 'POST',
@@ -33,6 +37,36 @@ export async function postJson<TResponse, TBody>(path: string, body: TBody): Pro
   }
 
   return response.json() as Promise<TResponse>;
+}
+
+export async function getJson<TResponse>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<TResponse> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: 'GET',
+    headers: buildHeaders(options),
+  });
+
+  if (!response.ok) {
+    const errorBody = await readErrorBody(response);
+    throw new HttpClientError(
+      errorBody.detail ?? errorBody.title ?? 'Não foi possível carregar os dados.',
+      response.status,
+    );
+  }
+
+  return response.json() as Promise<TResponse>;
+}
+
+function buildHeaders(options: RequestOptions) {
+  const headers: HeadersInit = {};
+
+  if (options.accessToken) {
+    headers.Authorization = `Bearer ${options.accessToken}`;
+  }
+
+  return headers;
 }
 
 async function readErrorBody(response: Response): Promise<HttpErrorBody> {
