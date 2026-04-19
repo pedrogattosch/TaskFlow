@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { HttpClientError } from '../services/httpClient';
 import { taskService } from '../services/taskService';
@@ -18,10 +18,16 @@ const statusLabels: Record<TaskStatus, string> = {
   4: 'Cancelada',
 };
 
+type TasksLocationState = {
+  createdTask?: TaskListItem;
+} | null;
+
 export function TasksPage() {
   const { logout, session } = useAuth();
-  const [tasks, setTasks] = useState<TaskListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
+  const createdTask = (location.state as TasksLocationState)?.createdTask ?? null;
+  const [tasks, setTasks] = useState<TaskListItem[]>(() => mergeCreatedTask([], createdTask));
+  const [isLoading, setIsLoading] = useState(!createdTask);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,7 +45,7 @@ export function TasksPage() {
         const response = await taskService.getTasks(session.accessToken);
 
         if (isMounted) {
-          setTasks(response);
+          setTasks(mergeCreatedTask(response, createdTask));
         }
       } catch (error) {
         if (!isMounted) {
@@ -66,7 +72,7 @@ export function TasksPage() {
     return () => {
       isMounted = false;
     };
-  }, [logout, session?.accessToken]);
+  }, [createdTask?.id, logout, session?.accessToken]);
 
   return (
     <main className="tasks-page">
@@ -105,7 +111,7 @@ type TaskListContentProps = {
 };
 
 function TaskListContent({ errorMessage, isLoading, tasks }: TaskListContentProps) {
-  if (isLoading) {
+  if (isLoading && tasks.length === 0) {
     return (
       <div className="tasks-page__state" role="status">
         Carregando tarefas...
@@ -133,36 +139,52 @@ function TaskListContent({ errorMessage, isLoading, tasks }: TaskListContentProp
   }
 
   return (
-    <div className="tasks-page__list" aria-label="Lista de tarefas">
-      {tasks.map((task) => (
-        <article className="task-card" key={task.id}>
-          <div className="task-card__main">
-            <div>
-              <h2>{task.title}</h2>
-              {task.description && <p>{task.description}</p>}
+    <>
+      {isLoading && (
+        <div className="tasks-page__state" role="status">
+          Atualizando tarefas...
+        </div>
+      )}
+
+      <div className="tasks-page__list" aria-label="Lista de tarefas">
+        {tasks.map((task) => (
+          <article className="task-card" key={task.id}>
+            <div className="task-card__main">
+              <div>
+                <h2>{task.title}</h2>
+                {task.description && <p>{task.description}</p>}
+              </div>
+
+              <span className="task-card__status">{statusLabels[task.status]}</span>
             </div>
 
-            <span className="task-card__status">{statusLabels[task.status]}</span>
-          </div>
-
-          <dl className="task-card__meta">
-            <div>
-              <dt>Prioridade</dt>
-              <dd>{priorityLabels[task.priority]}</dd>
-            </div>
-            <div>
-              <dt>Vencimento</dt>
-              <dd>{formatDate(task.dueDate)}</dd>
-            </div>
-            <div>
-              <dt>Categoria</dt>
-              <dd>{task.categoryName ?? 'Sem categoria'}</dd>
-            </div>
-          </dl>
-        </article>
-      ))}
-    </div>
+            <dl className="task-card__meta">
+              <div>
+                <dt>Prioridade</dt>
+                <dd>{priorityLabels[task.priority]}</dd>
+              </div>
+              <div>
+                <dt>Vencimento</dt>
+                <dd>{formatDate(task.dueDate)}</dd>
+              </div>
+              <div>
+                <dt>Categoria</dt>
+                <dd>{task.categoryName ?? 'Sem categoria'}</dd>
+              </div>
+            </dl>
+          </article>
+        ))}
+      </div>
+    </>
   );
+}
+
+function mergeCreatedTask(tasks: TaskListItem[], createdTask: TaskListItem | null) {
+  if (!createdTask || tasks.some((task) => task.id === createdTask.id)) {
+    return tasks;
+  }
+
+  return [createdTask, ...tasks];
 }
 
 function formatDate(value: string | null) {

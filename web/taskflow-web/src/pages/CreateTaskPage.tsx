@@ -59,8 +59,8 @@ export function CreateTaskPage() {
       setIsLoading(true);
       setErrorMessage(null);
 
-      await taskService.createTask(session.accessToken, payload);
-      navigate('/tasks');
+      const createdTask = await taskService.createTask(session.accessToken, payload);
+      navigate('/tasks', { state: { createdTask } });
     } catch (error) {
       if (error instanceof HttpClientError && error.status === 401) {
         logout();
