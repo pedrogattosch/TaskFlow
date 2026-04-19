@@ -22,4 +22,8 @@
     <Folder Include="Filtres\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TaskFlow.Infrastructure\TaskFlow.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
