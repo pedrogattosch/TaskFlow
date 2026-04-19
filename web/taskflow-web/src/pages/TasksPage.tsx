@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { HttpClientError } from '../services/httpClient';
 import { taskService } from '../services/taskService';
@@ -82,6 +83,9 @@ export function TasksPage() {
           <div className="tasks-page__session" aria-label="Sessão atual">
             <span>Conectado como</span>
             <strong>{session?.email}</strong>
+            <Link className="tasks-page__primary-action" to="/tasks/new">
+              Criar tarefa
+            </Link>
             <button type="button" onClick={logout}>
               Sair
             </button>
@@ -120,7 +124,10 @@ function TaskListContent({ errorMessage, isLoading, tasks }: TaskListContentProp
   if (tasks.length === 0) {
     return (
       <div className="tasks-page__state">
-        Nenhuma tarefa encontrada para sua conta.
+        <p>Nenhuma tarefa encontrada para sua conta.</p>
+        <Link className="tasks-page__state-action" to="/tasks/new">
+          Criar primeira tarefa
+        </Link>
       </div>
     );
   }
