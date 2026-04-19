@@ -1,10 +1,14 @@
 import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/LoginForm';
-import { authService } from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
 import { HttpClientError } from '../services/httpClient';
 import type { LoginCredentials } from '../types/auth';
 
 export function LoginPage() {
+  const { login } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -13,7 +17,9 @@ export function LoginPage() {
       setIsLoading(true);
       setErrorMessage(null);
 
-      await authService.login(credentials);
+      await login(credentials);
+      const from = location.state?.from?.pathname ?? '/';
+      navigate(from, { replace: true });
     } catch (error) {
       if (error instanceof HttpClientError && error.status === 401) {
         setErrorMessage('Email ou senha inválidos.');
@@ -39,7 +45,7 @@ export function LoginPage() {
             movimento.
           </p>
           <p className="login-page__secondary-action">
-            Ainda não tem conta? <a href="/register">Criar conta</a>
+            Ainda não tem conta? <Link to="/register">Criar conta</Link>
           </p>
         </div>
 

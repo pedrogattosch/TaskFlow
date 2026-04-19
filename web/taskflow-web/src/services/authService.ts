@@ -1,4 +1,3 @@
-import { authTokenStorage } from './authTokenStorage';
 import { postJson } from './httpClient';
 import type { AuthResponse, LoginCredentials, RegisterCredentials } from '../types/auth';
 
@@ -15,13 +14,10 @@ type RegisterRequest = {
 
 export const authService = {
   async login(credentials: LoginCredentials) {
-    const auth = await postJson<AuthResponse, LoginRequest>('/auth/login', {
+    return postJson<AuthResponse, LoginRequest>('/auth/login', {
       email: credentials.email,
       password: credentials.password,
     });
-
-    authTokenStorage.saveSession(auth);
-    return auth;
   },
 
   async register(credentials: RegisterCredentials) {

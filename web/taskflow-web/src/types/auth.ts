@@ -17,3 +17,5 @@ export type AuthResponse = {
   accessToken: string;
   expiresAt: string;
 };
+
+export type AuthSession = AuthResponse;

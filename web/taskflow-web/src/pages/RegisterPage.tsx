@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { RegisterForm } from '../components/RegisterForm';
 import { authService } from '../services/authService';
 import { HttpClientError } from '../services/httpClient';
 import type { RegisterCredentials } from '../types/auth';
 
 export function RegisterPage() {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -14,7 +16,7 @@ export function RegisterPage() {
       setErrorMessage(null);
 
       await authService.register(credentials);
-      window.location.assign('/');
+      navigate('/login', { replace: true });
     } catch (error) {
       if (error instanceof HttpClientError && error.status === 409) {
         setErrorMessage('Já existe uma conta com este email.');
@@ -40,7 +42,7 @@ export function RegisterPage() {
             acompanhar o que precisa avançar.
           </p>
           <p className="login-page__secondary-action">
-            Já tem conta? <a href="/">Entrar</a>
+            Já tem conta? <Link to="/login">Entrar</Link>
           </p>
         </div>
 
