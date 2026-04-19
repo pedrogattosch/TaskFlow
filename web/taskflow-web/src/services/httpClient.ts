@@ -41,7 +41,79 @@ export async function postJson<TResponse, TBody>(
     );
   }
 
+  if (response.status === 204) {
+    return null as TResponse;
+  }
+
   return response.json() as Promise<TResponse>;
+}
+
+export async function patchJson<TResponse, TBody>(
+  path: string,
+  body: TBody,
+  options: RequestOptions = {},
+): Promise<TResponse> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: 'PATCH',
+    headers: {
+      ...buildHeaders(options),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorBody = await readErrorBody(response);
+    throw new HttpClientError(
+      errorBody.detail ?? errorBody.title ?? 'Não foi possível concluir a solicitação.',
+      response.status,
+    );
+  }
+
+  return response.json() as Promise<TResponse>;
+}
+
+export async function putJson<TResponse, TBody>(
+  path: string,
+  body: TBody,
+  options: RequestOptions = {},
+): Promise<TResponse> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: 'PUT',
+    headers: {
+      ...buildHeaders(options),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorBody = await readErrorBody(response);
+    throw new HttpClientError(
+      errorBody.detail ?? errorBody.title ?? 'Não foi possível concluir a solicitação.',
+      response.status,
+    );
+  }
+
+  return response.json() as Promise<TResponse>;
+}
+
+export async function deleteJson(
+  path: string,
+  options: RequestOptions = {},
+): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: 'DELETE',
+    headers: buildHeaders(options),
+  });
+
+  if (!response.ok) {
+    const errorBody = await readErrorBody(response);
+    throw new HttpClientError(
+      errorBody.detail ?? errorBody.title ?? 'Não foi possível concluir a solicitação.',
+      response.status,
+    );
+  }
 }
 
 export async function getJson<TResponse>(

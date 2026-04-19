@@ -21,3 +21,5 @@ export type CreateTaskInput = {
   dueDate: string;
   categoryName: string;
 };
+
+export type UpdateTaskInput = CreateTaskInput;

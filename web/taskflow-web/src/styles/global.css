@@ -398,6 +398,11 @@ textarea {
   box-shadow: 0 12px 32px rgba(29, 35, 40, 0.08);
 }
 
+.task-card--editing {
+  border-color: #295660;
+  box-shadow: 0 12px 32px rgba(41, 86, 96, 0.16);
+}
+
 .task-card__main {
   display: flex;
   gap: 18px;
@@ -449,6 +454,55 @@ textarea {
   margin: 0;
   color: #273238;
   font-weight: 700;
+}
+
+.task-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.task-card__edit-form {
+  display: grid;
+  gap: 18px;
+}
+
+.task-card__edit-header {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.task-card__action {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #c8d0d2;
+  border-radius: 8px;
+  color: #295660;
+  background: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.task-card__action:hover:not(:disabled) {
+  border-color: #295660;
+  background: #e8f0f1;
+}
+
+.task-card__action--danger {
+  color: #8f2d22;
+  border-color: #e0aaa2;
+}
+
+.task-card__action--danger:hover:not(:disabled) {
+  border-color: #ab3d2f;
+  background: #fff1ef;
+}
+
+.task-card__action:disabled {
+  cursor: wait;
+  opacity: 0.64;
 }
 
 .task-form-page {
