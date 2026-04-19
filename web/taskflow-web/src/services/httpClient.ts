@@ -19,10 +19,15 @@ type RequestOptions = {
   accessToken?: string;
 };
 
-export async function postJson<TResponse, TBody>(path: string, body: TBody): Promise<TResponse> {
+export async function postJson<TResponse, TBody>(
+  path: string,
+  body: TBody,
+  options: RequestOptions = {},
+): Promise<TResponse> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     method: 'POST',
     headers: {
+      ...buildHeaders(options),
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),

@@ -13,3 +13,11 @@ export type TaskListItem = {
   categoryId: string | null;
   categoryName: string | null;
 };
+
+export type CreateTaskInput = {
+  title: string;
+  description: string | null;
+  priority: TaskPriority;
+  dueDate: string;
+  categoryName: string;
+};
