@@ -7,13 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="DTOs\Auth\" />
     <Folder Include="DTOs\Categories\" />
     <Folder Include="DTOs\Tasks\" />
-    <Folder Include="Interfaces\Auth\" />
     <Folder Include="Interfaces\Services\" />
-    <Folder Include="UseCases\Auth\LoginUser\" />
-    <Folder Include="UseCases\Auth\RegisterUser\" />
     <Folder Include="UseCases\Categories\CreateCategory\" />
     <Folder Include="UseCases\Categories\GetCategories\" />
     <Folder Include="UseCases\Dashboard\GetSummary\" />
@@ -26,6 +22,14 @@
     <Folder Include="Validators\Auth\" />
     <Folder Include="Validators\Categories\" />
     <Folder Include="Validators\Tasks\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TaskFlow.Domain\TaskFlow.Domain.csproj" />
   </ItemGroup>
 
 </Project>

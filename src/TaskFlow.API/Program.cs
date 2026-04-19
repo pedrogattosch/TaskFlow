@@ -1,3 +1,4 @@
+using TaskFlow.Application.DependencyInjection;
 using TaskFlow.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +18,7 @@ static void ConfigureServices(WebApplicationBuilder builder)
     services.AddControllers();
     services.AddOpenApi();
 
+    services.AddApplication();
     services.AddInfrastructure(builder.Configuration);
 }
 

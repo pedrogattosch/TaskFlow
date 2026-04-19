@@ -1,6 +1,24 @@
 @TaskFlow.API_HostAddress = http://localhost:5181
 
-GET {{TaskFlow.API_HostAddress}}/weatherforecast/
+POST {{TaskFlow.API_HostAddress}}/api/auth/register
+Content-Type: application/json
 Accept: application/json
+
+{
+  "name": "Pedro",
+  "email": "pedro@example.com",
+  "password": "ChangeMe123"
+}
+
+###
+
+POST {{TaskFlow.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "pedro@example.com",
+  "password": "ChangeMe123"
+}
 
 ###
