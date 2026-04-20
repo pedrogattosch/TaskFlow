@@ -3,6 +3,7 @@ using TaskFlow.Application.Exceptions;
 using TaskFlow.Application.Interfaces.Persistence;
 using TaskFlow.Domain.Interfaces;
 using CategoryEntity = TaskFlow.Domain.Entities.Category;
+using TaskStatusEnum = TaskFlow.Domain.Enums.TaskStatus;
 
 namespace TaskFlow.Application.UseCases.Tasks.UpdateTaskStatus;
 
@@ -35,7 +36,10 @@ public sealed class UpdateTaskStatusUseCase : IUpdateTaskStatusUseCase
         await EnsureUserExistsAsync(userId, cancellationToken);
 
         var task = await GetOwnedTaskAsync(userId, taskId, cancellationToken);
-        task.ChangeStatus(request.Status);
+        if (task.Status == TaskStatusEnum.Cancelled && request.Status == TaskStatusEnum.Pending)
+            task.Reactivate();
+        else
+            task.ChangeStatus(request.Status);
 
         await _taskRepository.UpdateAsync(task, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

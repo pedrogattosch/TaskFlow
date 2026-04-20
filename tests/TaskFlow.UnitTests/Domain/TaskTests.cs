@@ -82,15 +82,73 @@ public class TaskTests
     }
 
     [Fact]
-    public void ChangeStatus_ShouldThrow_WhenCancelledTaskMovesToInProgressWithoutReactivation()
+    public void ChangeStatus_ShouldMoveTaskToInProgress()
+    {
+        var task = CreateTask();
+
+        task.ChangeStatus(TaskStatusEnum.InProgress);
+
+        Assert.Equal(TaskStatusEnum.InProgress, task.Status);
+        Assert.Null(task.CompletedAt);
+    }
+
+    [Fact]
+    public void ChangeStatus_ShouldMoveTaskToCancelled()
+    {
+        var task = CreateTask();
+
+        task.ChangeStatus(TaskStatusEnum.Cancelled);
+
+        Assert.Equal(TaskStatusEnum.Cancelled, task.Status);
+        Assert.Null(task.CompletedAt);
+    }
+
+    [Fact]
+    public void ChangeStatus_ShouldMoveCompletedTaskToPendingAndClearCompletedAt()
+    {
+        var task = CreateTask();
+        task.ChangeStatus(TaskStatusEnum.Completed);
+
+        task.ChangeStatus(TaskStatusEnum.Pending);
+
+        Assert.Equal(TaskStatusEnum.Pending, task.Status);
+        Assert.Null(task.CompletedAt);
+    }
+
+    [Fact]
+    public void ChangeStatus_ShouldMoveCompletedTaskToInProgressAndClearCompletedAt()
+    {
+        var task = CreateTask();
+        task.ChangeStatus(TaskStatusEnum.Completed);
+
+        task.ChangeStatus(TaskStatusEnum.InProgress);
+
+        Assert.Equal(TaskStatusEnum.InProgress, task.Status);
+        Assert.Null(task.CompletedAt);
+    }
+
+    [Fact]
+    public void ChangeStatus_ShouldMoveInProgressTaskToPending()
+    {
+        var task = CreateTask();
+        task.ChangeStatus(TaskStatusEnum.InProgress);
+
+        task.ChangeStatus(TaskStatusEnum.Pending);
+
+        Assert.Equal(TaskStatusEnum.Pending, task.Status);
+        Assert.Null(task.CompletedAt);
+    }
+
+    [Fact]
+    public void ChangeStatus_ShouldThrow_WhenCancelledTaskMovesWithoutReactivation()
     {
         var task = CreateTask();
         task.ChangeStatus(TaskStatusEnum.Cancelled);
 
         var exception = Assert.Throws<DomainException>(() =>
-            task.ChangeStatus(TaskStatusEnum.InProgress));
+            task.ChangeStatus(TaskStatusEnum.Pending));
 
-        Assert.Contains("reativação explícita", exception.Message);
+        Assert.Contains("reativada", exception.Message);
     }
 
     [Fact]

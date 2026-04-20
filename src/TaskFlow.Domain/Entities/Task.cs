@@ -104,8 +104,8 @@ public class Task
         EnsureCanBeChanged();
         ValidateStatus(status);
 
-        if (Status == TaskStatusEnum.Cancelled && status == TaskStatusEnum.InProgress)
-            throw new DomainException("Uma tarefa cancelada não pode voltar para em andamento sem reativação explícita.");
+        if (Status == TaskStatusEnum.Cancelled && status != TaskStatusEnum.Cancelled)
+            throw new DomainException("Uma tarefa cancelada precisa ser reativada antes de mudar para outro status.");
 
         ApplyStatus(status);
         AuditInfo.Touch();

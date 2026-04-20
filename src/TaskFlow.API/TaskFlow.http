@@ -22,3 +22,39 @@ Accept: application/json
 }
 
 ###
+
+@AccessToken = cole-o-token-aqui
+@TaskId = cole-o-id-da-tarefa-aqui
+
+PATCH {{TaskFlow.API_HostAddress}}/api/tasks/{{TaskId}}/status
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{AccessToken}}
+
+{
+  "status": 1
+}
+
+###
+
+PATCH {{TaskFlow.API_HostAddress}}/api/tasks/{{TaskId}}/status
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{AccessToken}}
+
+{
+  "status": 2
+}
+
+###
+
+PATCH {{TaskFlow.API_HostAddress}}/api/tasks/{{TaskId}}/status
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{AccessToken}}
+
+{
+  "status": 4
+}
+
+###
