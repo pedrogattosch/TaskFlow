@@ -1,8 +1,10 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { categoryService } from '../services/categoryService';
 import { HttpClientError } from '../services/httpClient';
 import { taskService } from '../services/taskService';
+import type { CategoryListItem } from '../types/category';
 import type { TaskListItem, TaskPriority, TaskStatus, UpdateTaskInput } from '../types/task';
 
 const priorityLabels: Record<TaskPriority, string> = {
@@ -42,7 +44,7 @@ type TaskEditValues = {
   description: string;
   priority: TaskPriority | '';
   dueDate: string;
-  categoryName: string;
+  categoryId: string;
 };
 
 type TaskEditErrors = Partial<Record<keyof TaskEditValues, string>>;
@@ -52,13 +54,18 @@ export function TasksPage() {
   const location = useLocation();
   const createdTask = (location.state as TasksLocationState)?.createdTask ?? null;
   const [tasks, setTasks] = useState<TaskListItem[]>(() => mergeCreatedTask([], createdTask));
+  const [categories, setCategories] = useState<CategoryListItem[]>([]);
   const [isLoading, setIsLoading] = useState(!createdTask);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [categoryErrorMessage, setCategoryErrorMessage] = useState<string | null>(null);
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
   const [pendingTaskAction, setPendingTaskAction] = useState<PendingTaskAction>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<TaskEditValues | null>(null);
   const [editErrors, setEditErrors] = useState<TaskEditErrors>({});
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -103,6 +110,50 @@ export function TasksPage() {
       isMounted = false;
     };
   }, [createdTask?.id, logout, session?.accessToken]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadCategories() {
+      if (!session?.accessToken) {
+        return;
+      }
+
+      try {
+        setIsLoadingCategories(true);
+        setCategoryErrorMessage(null);
+
+        const response = await categoryService.getCategories(session.accessToken);
+
+        if (isMounted) {
+          setCategories(response);
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (error instanceof HttpClientError && error.status === 401) {
+          logout();
+          return;
+        }
+
+        setCategoryErrorMessage(
+          error instanceof Error ? error.message : 'Não foi possível carregar as categorias.',
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoadingCategories(false);
+        }
+      }
+    }
+
+    loadCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [logout, session?.accessToken]);
 
   async function handleCompleteTask(taskId: string) {
     if (!session?.accessToken || pendingTaskAction) {
@@ -185,7 +236,8 @@ export function TasksPage() {
       description: editValues.description.trim() || null,
       priority: editValues.priority,
       dueDate: editValues.dueDate,
-      categoryName: editValues.categoryName.trim(),
+      categoryId: editValues.categoryId,
+      categoryName: null,
     };
 
     try {
@@ -209,6 +261,50 @@ export function TasksPage() {
       );
     } finally {
       setPendingTaskAction(null);
+    }
+  }
+
+  async function handleCreateCategory() {
+    if (!session?.accessToken || isCreatingCategory) {
+      return;
+    }
+
+    const normalizedName = newCategoryName.trim();
+
+    if (!normalizedName) {
+      setCategoryErrorMessage('Informe o nome da nova categoria.');
+      return;
+    }
+
+    if (normalizedName.length > 80) {
+      setCategoryErrorMessage('Use no máximo 80 caracteres na categoria.');
+      return;
+    }
+
+    try {
+      setIsCreatingCategory(true);
+      setCategoryErrorMessage(null);
+
+      const createdCategory = await categoryService.createCategory(session.accessToken, {
+        name: normalizedName,
+        color: null,
+      });
+
+      setCategories((current) => addOrReplaceCategory(current, createdCategory));
+      setEditValues((current) => current ? { ...current, categoryId: createdCategory.id } : current);
+      setNewCategoryName('');
+      setEditErrors((current) => ({ ...current, categoryId: undefined }));
+    } catch (error) {
+      if (error instanceof HttpClientError && error.status === 401) {
+        logout();
+        return;
+      }
+
+      setCategoryErrorMessage(
+        error instanceof Error ? error.message : 'Não foi possível criar a categoria.',
+      );
+    } finally {
+      setIsCreatingCategory(false);
     }
   }
 
@@ -262,17 +358,30 @@ export function TasksPage() {
           </div>
         </header>
 
+        <CategorySummary
+          categories={categories}
+          errorMessage={categoryErrorMessage}
+          isLoading={isLoadingCategories}
+        />
+
         <TaskListContent
           actionErrorMessage={actionErrorMessage}
+          categories={categories}
+          categoryErrorMessage={categoryErrorMessage}
           editErrors={editErrors}
           editingTaskId={editingTaskId}
           editValues={editValues}
           errorMessage={errorMessage}
+          isCreatingCategory={isCreatingCategory}
+          isLoadingCategories={isLoadingCategories}
           isLoading={isLoading}
+          newCategoryName={newCategoryName}
           onCancelEdit={handleCancelEdit}
           onChangeEditValue={handleChangeEditValue}
+          onCreateCategory={handleCreateCategory}
           onCompleteTask={handleCompleteTask}
           onDeleteTask={handleDeleteTask}
+          onNewCategoryNameChange={setNewCategoryName}
           onStartEdit={handleStartEdit}
           onUpdateTask={handleUpdateTask}
           pendingTaskAction={pendingTaskAction}
@@ -283,17 +392,70 @@ export function TasksPage() {
   );
 }
 
+type CategorySummaryProps = {
+  categories: CategoryListItem[];
+  errorMessage: string | null;
+  isLoading: boolean;
+};
+
+function CategorySummary({ categories, errorMessage, isLoading }: CategorySummaryProps) {
+  if (isLoading) {
+    return (
+      <section className="categories-panel" aria-labelledby="categories-title">
+        <h2 id="categories-title">Categorias</h2>
+        <p role="status">Carregando categorias...</p>
+      </section>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <section className="categories-panel categories-panel--error" aria-labelledby="categories-title">
+        <h2 id="categories-title">Categorias</h2>
+        <p role="alert">{errorMessage}</p>
+      </section>
+    );
+  }
+
+  if (categories.length === 0) {
+    return (
+      <section className="categories-panel" aria-labelledby="categories-title">
+        <h2 id="categories-title">Categorias</h2>
+        <p>Nenhuma categoria cadastrada.</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="categories-panel" aria-labelledby="categories-title">
+      <h2 id="categories-title">Categorias</h2>
+      <ul className="categories-panel__list">
+        {categories.map((category) => (
+          <li key={category.id}>{category.name}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 type TaskListContentProps = {
   actionErrorMessage: string | null;
+  categories: CategoryListItem[];
+  categoryErrorMessage: string | null;
   editErrors: TaskEditErrors;
   editingTaskId: string | null;
   editValues: TaskEditValues | null;
   errorMessage: string | null;
+  isCreatingCategory: boolean;
+  isLoadingCategories: boolean;
   isLoading: boolean;
+  newCategoryName: string;
   onCancelEdit: () => void;
   onChangeEditValue: (name: keyof TaskEditValues, value: string) => void;
+  onCreateCategory: () => void;
   onCompleteTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
+  onNewCategoryNameChange: (name: string) => void;
   onStartEdit: (task: TaskListItem) => void;
   onUpdateTask: (event: FormEvent<HTMLFormElement>, taskId: string) => void;
   pendingTaskAction: PendingTaskAction;
@@ -302,15 +464,22 @@ type TaskListContentProps = {
 
 function TaskListContent({
   actionErrorMessage,
+  categories,
+  categoryErrorMessage,
   editErrors,
   editingTaskId,
   editValues,
   errorMessage,
+  isCreatingCategory,
+  isLoadingCategories,
   isLoading,
+  newCategoryName,
   onCancelEdit,
   onChangeEditValue,
+  onCreateCategory,
   onCompleteTask,
   onDeleteTask,
+  onNewCategoryNameChange,
   onStartEdit,
   onUpdateTask,
   pendingTaskAction,
@@ -369,10 +538,17 @@ function TaskListContent({
             >
               {isEditing ? (
                 <TaskEditForm
+                  categories={categories}
+                  categoryErrorMessage={categoryErrorMessage}
                   errors={editErrors}
+                  isCreatingCategory={isCreatingCategory}
+                  isLoadingCategories={isLoadingCategories}
                   isLoading={isUpdating}
+                  newCategoryName={newCategoryName}
                   onCancel={onCancelEdit}
                   onChange={onChangeEditValue}
+                  onCreateCategory={onCreateCategory}
+                  onNewCategoryNameChange={onNewCategoryNameChange}
                   onSubmit={(event) => onUpdateTask(event, task.id)}
                   taskId={task.id}
                   taskTitle={task.title}
@@ -447,10 +623,17 @@ function TaskListContent({
 }
 
 type TaskEditFormProps = {
+  categories: CategoryListItem[];
+  categoryErrorMessage: string | null;
   errors: TaskEditErrors;
+  isCreatingCategory: boolean;
+  isLoadingCategories: boolean;
   isLoading: boolean;
+  newCategoryName: string;
   onCancel: () => void;
   onChange: (name: keyof TaskEditValues, value: string) => void;
+  onCreateCategory: () => void;
+  onNewCategoryNameChange: (name: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   taskId: string;
   taskTitle: string;
@@ -458,10 +641,17 @@ type TaskEditFormProps = {
 };
 
 function TaskEditForm({
+  categories,
+  categoryErrorMessage,
   errors,
+  isCreatingCategory,
+  isLoadingCategories,
   isLoading,
+  newCategoryName,
   onCancel,
   onChange,
+  onCreateCategory,
+  onNewCategoryNameChange,
   onSubmit,
   taskId,
   taskTitle,
@@ -565,21 +755,55 @@ function TaskEditForm({
 
       <div className="task-form__field">
         <label htmlFor={`edit-category-${taskId}`}>Categoria</label>
-        <input
+        <select
           id={`edit-category-${taskId}`}
-          type="text"
-          maxLength={80}
-          value={values.categoryName}
-          aria-invalid={Boolean(errors.categoryName)}
-          aria-describedby={errors.categoryName ? `edit-category-${taskId}-error` : undefined}
-          onChange={(event) => onChange('categoryName', event.target.value)}
-          disabled={isLoading}
-        />
-        {errors.categoryName && (
+          value={values.categoryId}
+          aria-invalid={Boolean(errors.categoryId)}
+          aria-describedby={errors.categoryId ? `edit-category-${taskId}-error` : undefined}
+          onChange={(event) => onChange('categoryId', event.target.value)}
+          disabled={isLoading || isLoadingCategories || categories.length === 0}
+        >
+          <option value="">
+            {isLoadingCategories ? 'Carregando categorias...' : 'Selecione'}
+          </option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+        {errors.categoryId && (
           <span className="task-form__field-error" id={`edit-category-${taskId}-error`}>
-            {errors.categoryName}
+            {errors.categoryId}
           </span>
         )}
+        {!isLoadingCategories && categories.length === 0 && (
+          <span className="task-form__hint">Nenhuma categoria cadastrada.</span>
+        )}
+        {categoryErrorMessage && (
+          <span className="task-form__field-error" role="alert">
+            {categoryErrorMessage}
+          </span>
+        )}
+        <div className="task-form__inline-action">
+          <input
+            type="text"
+            maxLength={80}
+            placeholder="Nova categoria"
+            value={newCategoryName}
+            onChange={(event) => onNewCategoryNameChange(event.target.value)}
+            disabled={isLoading || isCreatingCategory}
+            aria-label="Nome da nova categoria"
+          />
+          <button
+            className="task-card__action"
+            type="button"
+            onClick={onCreateCategory}
+            disabled={isLoading || isCreatingCategory}
+          >
+            {isCreatingCategory ? 'Criando...' : 'Criar categoria'}
+          </button>
+        </div>
       </div>
 
       <div className="task-card__actions">
@@ -616,7 +840,7 @@ function toEditValues(task: TaskListItem): TaskEditValues {
     description: task.description ?? '',
     priority: task.priority,
     dueDate: toDateInputValue(task.dueDate),
-    categoryName: task.categoryName ?? '',
+    categoryId: task.categoryId ?? '',
   };
 }
 
@@ -643,13 +867,18 @@ function validateEditValues(values: TaskEditValues): TaskEditErrors {
     errors.dueDate = 'Informe uma data de hoje em diante.';
   }
 
-  if (!values.categoryName.trim()) {
-    errors.categoryName = 'Informe a categoria.';
-  } else if (values.categoryName.trim().length > 80) {
-    errors.categoryName = 'Use no máximo 80 caracteres.';
+  if (!values.categoryId) {
+    errors.categoryId = 'Selecione a categoria.';
   }
 
   return errors;
+}
+
+function addOrReplaceCategory(categories: CategoryListItem[], category: CategoryListItem) {
+  const nextCategories = categories.filter((current) => current.id !== category.id);
+  nextCategories.push(category);
+
+  return nextCategories.sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'));
 }
 
 function formatDate(value: string | null) {

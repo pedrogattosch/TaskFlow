@@ -19,7 +19,8 @@ export type CreateTaskInput = {
   description: string | null;
   priority: TaskPriority;
   dueDate: string;
-  categoryName: string;
+  categoryId: string;
+  categoryName: string | null;
 };
 
 export type UpdateTaskInput = CreateTaskInput;

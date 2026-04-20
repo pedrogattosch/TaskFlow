@@ -1,8 +1,10 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { categoryService } from '../services/categoryService';
 import { HttpClientError } from '../services/httpClient';
 import { taskService } from '../services/taskService';
+import type { CategoryListItem } from '../types/category';
 import type { CreateTaskInput, TaskPriority } from '../types/task';
 
 type TaskFormValues = {
@@ -10,7 +12,7 @@ type TaskFormValues = {
   description: string;
   priority: TaskPriority | '';
   dueDate: string;
-  categoryName: string;
+  categoryId: string;
 };
 
 type FormErrors = Partial<Record<keyof TaskFormValues, string>>;
@@ -26,16 +28,109 @@ const initialValues: TaskFormValues = {
   description: '',
   priority: '',
   dueDate: '',
-  categoryName: '',
+  categoryId: '',
 };
 
 export function CreateTaskPage() {
   const { logout, session } = useAuth();
   const navigate = useNavigate();
   const [values, setValues] = useState<TaskFormValues>(initialValues);
+  const [categories, setCategories] = useState<CategoryListItem[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [categoryErrorMessage, setCategoryErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadCategories() {
+      if (!session?.accessToken) {
+        return;
+      }
+
+      try {
+        setIsLoadingCategories(true);
+        setCategoryErrorMessage(null);
+
+        const response = await categoryService.getCategories(session.accessToken);
+
+        if (isMounted) {
+          setCategories(response);
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (error instanceof HttpClientError && error.status === 401) {
+          logout();
+          return;
+        }
+
+        setCategoryErrorMessage(
+          error instanceof Error ? error.message : 'Não foi possível carregar as categorias.',
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoadingCategories(false);
+        }
+      }
+    }
+
+    loadCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [logout, session?.accessToken]);
+
+  async function handleCreateCategory() {
+    if (!session?.accessToken || isCreatingCategory) {
+      return;
+    }
+
+    const normalizedName = newCategoryName.trim();
+
+    if (!normalizedName) {
+      setCategoryErrorMessage('Informe o nome da nova categoria.');
+      return;
+    }
+
+    if (normalizedName.length > 80) {
+      setCategoryErrorMessage('Use no máximo 80 caracteres na categoria.');
+      return;
+    }
+
+    try {
+      setIsCreatingCategory(true);
+      setCategoryErrorMessage(null);
+
+      const createdCategory = await categoryService.createCategory(session.accessToken, {
+        name: normalizedName,
+        color: null,
+      });
+
+      setCategories((current) => addOrReplaceCategory(current, createdCategory));
+      setValues((current) => ({ ...current, categoryId: createdCategory.id }));
+      setNewCategoryName('');
+      setErrors((current) => ({ ...current, categoryId: undefined }));
+    } catch (error) {
+      if (error instanceof HttpClientError && error.status === 401) {
+        logout();
+        return;
+      }
+
+      setCategoryErrorMessage(
+        error instanceof Error ? error.message : 'Não foi possível criar a categoria.',
+      );
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,7 +147,8 @@ export function CreateTaskPage() {
       description: values.description.trim() || null,
       priority: values.priority,
       dueDate: values.dueDate,
-      categoryName: values.categoryName.trim(),
+      categoryId: values.categoryId,
+      categoryName: null,
     };
 
     try {
@@ -74,6 +170,8 @@ export function CreateTaskPage() {
       setIsLoading(false);
     }
   }
+
+  const isFormDisabled = isLoading || isLoadingCategories;
 
   return (
     <main className="tasks-page">
@@ -112,7 +210,7 @@ export function CreateTaskPage() {
               onChange={(event) => {
                 setValues((current) => ({ ...current, title: event.target.value }));
               }}
-              disabled={isLoading}
+              disabled={isFormDisabled}
             />
             {errors.title && (
               <span className="task-form__field-error" id="title-error">
@@ -134,7 +232,7 @@ export function CreateTaskPage() {
               onChange={(event) => {
                 setValues((current) => ({ ...current, description: event.target.value }));
               }}
-              disabled={isLoading}
+              disabled={isFormDisabled}
             />
             {errors.description && (
               <span className="task-form__field-error" id="description-error">
@@ -158,7 +256,7 @@ export function CreateTaskPage() {
                     priority: event.target.value ? Number(event.target.value) as TaskPriority : '',
                   }));
                 }}
-                disabled={isLoading}
+                disabled={isFormDisabled}
               >
                 <option value="">Selecione</option>
                 {priorityOptions.map((option) => (
@@ -186,7 +284,7 @@ export function CreateTaskPage() {
                 onChange={(event) => {
                   setValues((current) => ({ ...current, dueDate: event.target.value }));
                 }}
-                disabled={isLoading}
+                disabled={isFormDisabled}
               />
               {errors.dueDate && (
                 <span className="task-form__field-error" id="due-date-error">
@@ -196,34 +294,117 @@ export function CreateTaskPage() {
             </div>
           </div>
 
-          <div className="task-form__field">
-            <label htmlFor="categoryName">Categoria</label>
-            <input
-              id="categoryName"
-              name="categoryName"
-              type="text"
-              maxLength={80}
-              value={values.categoryName}
-              aria-invalid={Boolean(errors.categoryName)}
-              aria-describedby={errors.categoryName ? 'category-error' : undefined}
-              onChange={(event) => {
-                setValues((current) => ({ ...current, categoryName: event.target.value }));
-              }}
-              disabled={isLoading}
-            />
-            {errors.categoryName && (
-              <span className="task-form__field-error" id="category-error">
-                {errors.categoryName}
-              </span>
-            )}
-          </div>
+          <CategorySelector
+            categories={categories}
+            categoryErrorMessage={categoryErrorMessage}
+            error={errors.categoryId}
+            isCreatingCategory={isCreatingCategory}
+            isLoadingCategories={isLoadingCategories}
+            newCategoryName={newCategoryName}
+            onCategoryChange={(categoryId) => {
+              setValues((current) => ({ ...current, categoryId }));
+            }}
+            onCreateCategory={handleCreateCategory}
+            onNewCategoryNameChange={setNewCategoryName}
+            selectId="categoryId"
+            selectedCategoryId={values.categoryId}
+            disabled={isLoading}
+          />
 
-          <button className="task-form__submit" type="submit" disabled={isLoading}>
+          <button className="task-form__submit" type="submit" disabled={isFormDisabled}>
             {isLoading ? 'Criando tarefa...' : 'Criar tarefa'}
           </button>
         </form>
       </section>
     </main>
+  );
+}
+
+type CategorySelectorProps = {
+  categories: CategoryListItem[];
+  categoryErrorMessage: string | null;
+  disabled: boolean;
+  error?: string;
+  isCreatingCategory: boolean;
+  isLoadingCategories: boolean;
+  newCategoryName: string;
+  onCategoryChange: (categoryId: string) => void;
+  onCreateCategory: () => void;
+  onNewCategoryNameChange: (name: string) => void;
+  selectId: string;
+  selectedCategoryId: string;
+};
+
+function CategorySelector({
+  categories,
+  categoryErrorMessage,
+  disabled,
+  error,
+  isCreatingCategory,
+  isLoadingCategories,
+  newCategoryName,
+  onCategoryChange,
+  onCreateCategory,
+  onNewCategoryNameChange,
+  selectId,
+  selectedCategoryId,
+}: CategorySelectorProps) {
+  const errorId = `${selectId}-error`;
+
+  return (
+    <div className="task-form__field">
+      <label htmlFor={selectId}>Categoria</label>
+      <select
+        id={selectId}
+        name={selectId}
+        value={selectedCategoryId}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? errorId : undefined}
+        onChange={(event) => onCategoryChange(event.target.value)}
+        disabled={disabled || isLoadingCategories || categories.length === 0}
+      >
+        <option value="">
+          {isLoadingCategories ? 'Carregando categorias...' : 'Selecione'}
+        </option>
+        {categories.map((category) => (
+          <option key={category.id} value={category.id}>
+            {category.name}
+          </option>
+        ))}
+      </select>
+      {error && (
+        <span className="task-form__field-error" id={errorId}>
+          {error}
+        </span>
+      )}
+      {!isLoadingCategories && categories.length === 0 && (
+        <span className="task-form__hint">Nenhuma categoria cadastrada.</span>
+      )}
+      {categoryErrorMessage && (
+        <span className="task-form__field-error" role="alert">
+          {categoryErrorMessage}
+        </span>
+      )}
+      <div className="task-form__inline-action">
+        <input
+          type="text"
+          maxLength={80}
+          placeholder="Nova categoria"
+          value={newCategoryName}
+          onChange={(event) => onNewCategoryNameChange(event.target.value)}
+          disabled={disabled || isCreatingCategory}
+          aria-label="Nome da nova categoria"
+        />
+        <button
+          className="task-card__action"
+          type="button"
+          onClick={onCreateCategory}
+          disabled={disabled || isCreatingCategory}
+        >
+          {isCreatingCategory ? 'Criando...' : 'Criar categoria'}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -250,13 +431,18 @@ function validate(values: TaskFormValues): FormErrors {
     errors.dueDate = 'Informe uma data de hoje em diante.';
   }
 
-  if (!values.categoryName.trim()) {
-    errors.categoryName = 'Informe a categoria.';
-  } else if (values.categoryName.trim().length > 80) {
-    errors.categoryName = 'Use no máximo 80 caracteres.';
+  if (!values.categoryId) {
+    errors.categoryId = 'Selecione a categoria.';
   }
 
   return errors;
+}
+
+function addOrReplaceCategory(categories: CategoryListItem[], category: CategoryListItem) {
+  const nextCategories = categories.filter((current) => current.id !== category.id);
+  nextCategories.push(category);
+
+  return nextCategories.sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'));
 }
 
 function isBeforeToday(value: string) {
