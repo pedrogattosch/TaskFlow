@@ -46,6 +46,25 @@ public sealed class TaskRepository : ITaskRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async System.Threading.Tasks.Task<IReadOnlyDictionary<TaskFlow.Domain.Enums.TaskStatus, int>> CountByStatusAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.TaskItems
+            .AsNoTracking()
+            .Where(task => task.UserId == userId && !task.IsDeleted)
+            .GroupBy(task => task.Status)
+            .Select(group => new
+            {
+                Status = group.Key,
+                Count = group.Count()
+            })
+            .ToDictionaryAsync(
+                item => item.Status,
+                item => item.Count,
+                cancellationToken);
+    }
+
     public async System.Threading.Tasks.Task AddAsync(
         TaskItemEntity task,
         CancellationToken cancellationToken = default)

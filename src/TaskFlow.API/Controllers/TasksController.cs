@@ -4,6 +4,7 @@ using TaskFlow.Application.Exceptions;
 using TaskFlow.Application.Interfaces.Auth;
 using TaskFlow.Application.UseCases.Tasks.CreateTask;
 using TaskFlow.Application.UseCases.Tasks.DeleteTask;
+using TaskFlow.Application.UseCases.Tasks.GetTaskSummary;
 using TaskFlow.Application.UseCases.Tasks.GetTasks;
 using TaskFlow.Application.UseCases.Tasks.UpdateTask;
 using TaskFlow.Application.UseCases.Tasks.UpdateTaskStatus;
@@ -17,6 +18,7 @@ public sealed class TasksController : ControllerBase
 {
     private readonly ICreateTaskUseCase _createTaskUseCase;
     private readonly IGetTasksUseCase _getTasksUseCase;
+    private readonly IGetTaskSummaryUseCase _getTaskSummaryUseCase;
     private readonly IUpdateTaskUseCase _updateTaskUseCase;
     private readonly IUpdateTaskStatusUseCase _updateTaskStatusUseCase;
     private readonly IDeleteTaskUseCase _deleteTaskUseCase;
@@ -25,6 +27,7 @@ public sealed class TasksController : ControllerBase
     public TasksController(
         ICreateTaskUseCase createTaskUseCase,
         IGetTasksUseCase getTasksUseCase,
+        IGetTaskSummaryUseCase getTaskSummaryUseCase,
         IUpdateTaskUseCase updateTaskUseCase,
         IUpdateTaskStatusUseCase updateTaskStatusUseCase,
         IDeleteTaskUseCase deleteTaskUseCase,
@@ -32,10 +35,32 @@ public sealed class TasksController : ControllerBase
     {
         _createTaskUseCase = createTaskUseCase;
         _getTasksUseCase = getTasksUseCase;
+        _getTaskSummaryUseCase = getTaskSummaryUseCase;
         _updateTaskUseCase = updateTaskUseCase;
         _updateTaskStatusUseCase = updateTaskStatusUseCase;
         _deleteTaskUseCase = deleteTaskUseCase;
         _jwtTokenValidator = jwtTokenValidator;
+    }
+
+    [HttpGet("summary")]
+    [ProducesResponseType(typeof(TaskSummaryResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetTaskSummary(CancellationToken cancellationToken)
+    {
+        var userId = GetAuthenticatedUserId();
+
+        if (!userId.HasValue)
+            return Unauthorized(CreateProblem("UsuÃ¡rio nÃ£o autenticado.", StatusCodes.Status401Unauthorized));
+
+        try
+        {
+            var response = await _getTaskSummaryUseCase.ExecuteAsync(userId.Value, cancellationToken);
+            return Ok(response);
+        }
+        catch (ApplicationUnauthorizedException exception)
+        {
+            return Unauthorized(CreateProblem(exception.Message, StatusCodes.Status401Unauthorized));
+        }
     }
 
     [HttpGet]

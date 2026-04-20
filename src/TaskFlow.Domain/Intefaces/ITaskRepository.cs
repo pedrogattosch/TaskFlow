@@ -7,6 +7,9 @@ public interface ITaskRepository
         Guid userId,
         TaskFilter filter,
         CancellationToken cancellationToken = default);
+    System.Threading.Tasks.Task<IReadOnlyDictionary<TaskFlow.Domain.Enums.TaskStatus, int>> CountByStatusAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
     System.Threading.Tasks.Task AddAsync(TaskFlow.Domain.Entities.Task task, CancellationToken cancellationToken = default);
     System.Threading.Tasks.Task UpdateAsync(TaskFlow.Domain.Entities.Task task, CancellationToken cancellationToken = default);
     System.Threading.Tasks.Task DeleteAsync(TaskFlow.Domain.Entities.Task task, CancellationToken cancellationToken = default);
