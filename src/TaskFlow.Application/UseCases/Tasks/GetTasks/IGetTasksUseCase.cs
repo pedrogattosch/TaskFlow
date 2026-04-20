@@ -6,5 +6,6 @@ public interface IGetTasksUseCase
 {
     Task<IReadOnlyList<TaskResponse>> ExecuteAsync(
         Guid userId,
+        GetTasksRequest request,
         CancellationToken cancellationToken = default);
 }

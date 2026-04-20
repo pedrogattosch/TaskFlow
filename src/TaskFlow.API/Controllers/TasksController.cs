@@ -41,7 +41,9 @@ public sealed class TasksController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<TaskResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetTasks(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetTasks(
+        [FromQuery] GetTasksRequest request,
+        CancellationToken cancellationToken)
     {
         var userId = GetAuthenticatedUserId();
 
@@ -50,8 +52,12 @@ public sealed class TasksController : ControllerBase
 
         try
         {
-            var response = await _getTasksUseCase.ExecuteAsync(userId.Value, cancellationToken);
+            var response = await _getTasksUseCase.ExecuteAsync(userId.Value, request, cancellationToken);
             return Ok(response);
+        }
+        catch (ApplicationValidationException exception)
+        {
+            return BadRequest(CreateProblem(exception.Message, StatusCodes.Status400BadRequest));
         }
         catch (ApplicationUnauthorizedException exception)
         {

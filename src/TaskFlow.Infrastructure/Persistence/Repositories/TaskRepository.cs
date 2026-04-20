@@ -24,13 +24,25 @@ public sealed class TaskRepository : ITaskRepository
 
     public async System.Threading.Tasks.Task<IReadOnlyList<TaskItemEntity>> GetByUserIdAsync(
         Guid userId,
+        TaskFilter filter,
         CancellationToken cancellationToken = default)
     {
-        return await _dbContext.TaskItems
+        var query = _dbContext.TaskItems
             .AsNoTracking()
-            .Where(task => task.UserId == userId && !task.IsDeleted)
-            .OrderBy(task => task.DueDate ?? DateTime.MaxValue)
-            .ThenByDescending(task => task.AuditInfo.CreatedAt)
+            .Where(task => task.UserId == userId && !task.IsDeleted);
+
+        if (filter.Status.HasValue)
+            query = query.Where(task => task.Status == filter.Status.Value);
+
+        if (filter.Priority.HasValue)
+            query = query.Where(task => task.Priority == filter.Priority.Value);
+
+        if (filter.CategoryId.HasValue)
+            query = query.Where(task => task.CategoryId == filter.CategoryId.Value);
+
+        query = ApplySorting(query, filter);
+
+        return await query
             .ToListAsync(cancellationToken);
     }
 
@@ -56,5 +68,30 @@ public sealed class TaskRepository : ITaskRepository
         task.SoftDelete();
         _dbContext.TaskItems.Update(task);
         return System.Threading.Tasks.Task.CompletedTask;
+    }
+
+    private static IQueryable<TaskItemEntity> ApplySorting(
+        IQueryable<TaskItemEntity> query,
+        TaskFilter filter)
+    {
+        return filter.SortBy switch
+        {
+            TaskSortBy.Priority => filter.SortDirection == SortDirection.Desc
+                ? query.OrderByDescending(task => task.Priority)
+                    .ThenBy(task => task.DueDate ?? DateTime.MaxValue)
+                    .ThenByDescending(task => task.AuditInfo.CreatedAt)
+                : query.OrderBy(task => task.Priority)
+                    .ThenBy(task => task.DueDate ?? DateTime.MaxValue)
+                    .ThenByDescending(task => task.AuditInfo.CreatedAt),
+            _ => filter.SortDirection == SortDirection.Desc
+                ? query.OrderBy(task => task.DueDate.HasValue ? 0 : 1)
+                    .ThenByDescending(task => task.DueDate)
+                    .ThenByDescending(task => task.Priority)
+                    .ThenByDescending(task => task.AuditInfo.CreatedAt)
+                : query.OrderBy(task => task.DueDate.HasValue ? 0 : 1)
+                    .ThenBy(task => task.DueDate)
+                    .ThenByDescending(task => task.Priority)
+                    .ThenByDescending(task => task.AuditInfo.CreatedAt)
+        };
     }
 }
