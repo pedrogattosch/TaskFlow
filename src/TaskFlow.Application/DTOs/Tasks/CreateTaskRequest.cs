@@ -7,4 +7,5 @@ public sealed record CreateTaskRequest(
     string? Description,
     TaskPriority Priority,
     DateTime? DueDate,
+    Guid? CategoryId,
     string? CategoryName);

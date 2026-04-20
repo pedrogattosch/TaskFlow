@@ -35,7 +35,7 @@ public sealed class UpdateTaskUseCase : IUpdateTaskUseCase
         await EnsureUserExistsAsync(userId, cancellationToken);
 
         var task = await GetOwnedTaskAsync(userId, taskId, cancellationToken);
-        var category = await GetOrCreateCategoryAsync(userId, request.CategoryName, cancellationToken);
+        var category = await GetCategoryAsync(userId, request.CategoryId, request.CategoryName, cancellationToken);
 
         task.UpdateTitle(request.Title);
         task.UpdateDescription(request.Description);
@@ -70,11 +70,22 @@ public sealed class UpdateTaskUseCase : IUpdateTaskUseCase
         return task;
     }
 
-    private async Task<CategoryEntity?> GetOrCreateCategoryAsync(
+    private async Task<CategoryEntity?> GetCategoryAsync(
         Guid userId,
+        Guid? categoryId,
         string? categoryName,
         CancellationToken cancellationToken)
     {
+        if (categoryId.HasValue)
+        {
+            var categoryById = await _categoryRepository.GetByIdAsync(categoryId.Value, cancellationToken);
+
+            if (categoryById is null || categoryById.UserId != userId)
+                throw new ApplicationValidationException("A categoria informada é inválida.");
+
+            return categoryById;
+        }
+
         if (string.IsNullOrWhiteSpace(categoryName))
             return null;
 
@@ -116,10 +127,13 @@ public sealed class UpdateTaskUseCase : IUpdateTaskUseCase
         if (request.DueDate.HasValue && request.DueDate.Value.Date < DateTime.UtcNow.Date)
             throw new ApplicationValidationException("A data de vencimento não pode ser anterior à data atual.");
 
-        if (string.IsNullOrWhiteSpace(request.CategoryName))
+        if (!request.CategoryId.HasValue && string.IsNullOrWhiteSpace(request.CategoryName))
             throw new ApplicationValidationException("A categoria da tarefa é obrigatória.");
 
-        if (request.CategoryName.Trim().Length > 80)
+        if (request.CategoryId.HasValue && request.CategoryId.Value == Guid.Empty)
+            throw new ApplicationValidationException("A categoria informada é inválida.");
+
+        if (!string.IsNullOrWhiteSpace(request.CategoryName) && request.CategoryName.Trim().Length > 80)
             throw new ApplicationValidationException("A categoria deve ter no máximo 80 caracteres.");
     }
 }
