@@ -35,3 +35,5 @@ static void ConfigurePipeline(WebApplication app)
 
     app.MapControllers();
 }
+
+public partial class Program;
