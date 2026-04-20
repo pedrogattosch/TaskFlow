@@ -85,12 +85,25 @@ public class ApiEndpointTests : IClassFixture<CustomWebApplicationFactory>
         Assert.NotNull(createdCategory);
         Assert.Equal("Trabalho", createdCategory.Name);
 
+        var updateResponse = await _client.PutAsJsonAsync($"/api/categories/{createdCategory.Id}", new
+        {
+            name = createdCategory.Name,
+            color = "#27675d"
+        });
+
+        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
+        var updatedCategory = await updateResponse.Content.ReadFromJsonAsync<CategoryResponse>();
+        Assert.NotNull(updatedCategory);
+        Assert.Equal("#27675d", updatedCategory.Color);
+
         var listResponse = await _client.GetAsync("/api/categories");
 
         Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
         var categories = await listResponse.Content.ReadFromJsonAsync<List<CategoryResponse>>();
         Assert.NotNull(categories);
-        Assert.Contains(categories, category => category.Id == createdCategory.Id);
+        Assert.Contains(categories, category =>
+            category.Id == createdCategory.Id &&
+            category.Color == "#27675d");
     }
 
     [Fact]

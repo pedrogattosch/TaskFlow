@@ -23,6 +23,8 @@ const priorityOptions: Array<{ label: string; value: TaskPriority }> = [
   { label: 'Alta', value: 3 },
 ];
 
+const defaultCategoryColor = '#27675d';
+
 const initialValues: TaskFormValues = {
   title: '',
   description: '',
@@ -37,6 +39,7 @@ export function CreateTaskPage() {
   const [values, setValues] = useState<TaskFormValues>(initialValues);
   const [categories, setCategories] = useState<CategoryListItem[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryColor, setNewCategoryColor] = useState(defaultCategoryColor);
   const [errors, setErrors] = useState<FormErrors>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [categoryErrorMessage, setCategoryErrorMessage] = useState<string | null>(null);
@@ -111,12 +114,13 @@ export function CreateTaskPage() {
 
       const createdCategory = await categoryService.createCategory(session.accessToken, {
         name: normalizedName,
-        color: null,
+        color: newCategoryColor,
       });
 
       setCategories((current) => addOrReplaceCategory(current, createdCategory));
       setValues((current) => ({ ...current, categoryId: createdCategory.id }));
       setNewCategoryName('');
+      setNewCategoryColor(defaultCategoryColor);
       setErrors((current) => ({ ...current, categoryId: undefined }));
     } catch (error) {
       if (error instanceof HttpClientError && error.status === 401) {
@@ -178,10 +182,10 @@ export function CreateTaskPage() {
       <section className="task-form-page" aria-labelledby="create-task-title">
         <header className="task-form-page__header">
           <div>
-            <p className="tasks-page__eyebrow">Nova tarefa</p>
+            <p className="tasks-page__eyebrow">TaskFlow</p>
             <h1 id="create-task-title">Criar tarefa</h1>
             <p className="tasks-page__description">
-              Registre uma tarefa com prioridade, prazo e categoria para acompanhar no painel.
+              Registre uma tarefa com prioridade, prazo e categoria.
             </p>
           </div>
 
@@ -300,11 +304,13 @@ export function CreateTaskPage() {
             error={errors.categoryId}
             isCreatingCategory={isCreatingCategory}
             isLoadingCategories={isLoadingCategories}
+            newCategoryColor={newCategoryColor}
             newCategoryName={newCategoryName}
             onCategoryChange={(categoryId) => {
               setValues((current) => ({ ...current, categoryId }));
             }}
             onCreateCategory={handleCreateCategory}
+            onNewCategoryColorChange={setNewCategoryColor}
             onNewCategoryNameChange={setNewCategoryName}
             selectId="categoryId"
             selectedCategoryId={values.categoryId}
@@ -327,9 +333,11 @@ type CategorySelectorProps = {
   error?: string;
   isCreatingCategory: boolean;
   isLoadingCategories: boolean;
+  newCategoryColor: string;
   newCategoryName: string;
   onCategoryChange: (categoryId: string) => void;
   onCreateCategory: () => void;
+  onNewCategoryColorChange: (color: string) => void;
   onNewCategoryNameChange: (name: string) => void;
   selectId: string;
   selectedCategoryId: string;
@@ -342,9 +350,11 @@ function CategorySelector({
   error,
   isCreatingCategory,
   isLoadingCategories,
+  newCategoryColor,
   newCategoryName,
   onCategoryChange,
   onCreateCategory,
+  onNewCategoryColorChange,
   onNewCategoryNameChange,
   selectId,
   selectedCategoryId,
@@ -395,6 +405,16 @@ function CategorySelector({
           disabled={disabled || isCreatingCategory}
           aria-label="Nome da nova categoria"
         />
+        <label className="task-form__color-picker">
+          <span>Cor</span>
+          <input
+            type="color"
+            value={newCategoryColor}
+            onChange={(event) => onNewCategoryColorChange(event.target.value)}
+            disabled={disabled || isCreatingCategory}
+            aria-label="Cor da nova categoria"
+          />
+        </label>
         <button
           className="task-card__action"
           type="button"

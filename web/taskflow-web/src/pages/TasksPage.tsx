@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { type CSSProperties, type FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { categoryService } from '../services/categoryService';
@@ -47,6 +47,8 @@ const sortOptions: Array<{ label: string; sortBy: TaskSortBy; sortDirection: Tas
   { label: 'Maior prioridade', sortBy: 'priority', sortDirection: 'desc' },
   { label: 'Menor prioridade', sortBy: 'priority', sortDirection: 'asc' },
 ];
+
+const defaultCategoryColor = '#27675d';
 
 const pendingTaskStatus: TaskStatus = 1;
 const inProgressTaskStatus: TaskStatus = 2;
@@ -130,7 +132,11 @@ export function TasksPage() {
   const [editValues, setEditValues] = useState<TaskEditValues | null>(null);
   const [editErrors, setEditErrors] = useState<TaskEditErrors>({});
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryColor, setNewCategoryColor] = useState(defaultCategoryColor);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isEditingCategories, setIsEditingCategories] = useState(false);
+  const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(null);
+  const [categoryActionErrorMessage, setCategoryActionErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -313,6 +319,14 @@ export function TasksPage() {
       return;
     }
 
+    const confirmed = window.confirm(
+      'Excluir esta tarefa?\n\nEsta ação é permanente e a tarefa não poderá ser recuperada após a exclusão.',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     try {
       setPendingTaskAction({ taskId, action: 'delete' });
       setActionErrorMessage(null);
@@ -408,12 +422,13 @@ export function TasksPage() {
 
       const createdCategory = await categoryService.createCategory(session.accessToken, {
         name: normalizedName,
-        color: null,
+        color: newCategoryColor,
       });
 
       setCategories((current) => addOrReplaceCategory(current, createdCategory));
       setEditValues((current) => current ? { ...current, categoryId: createdCategory.id } : current);
       setNewCategoryName('');
+      setNewCategoryColor(defaultCategoryColor);
       setEditErrors((current) => ({ ...current, categoryId: undefined }));
     } catch (error) {
       if (error instanceof HttpClientError && error.status === 401) {
@@ -426,6 +441,39 @@ export function TasksPage() {
       );
     } finally {
       setIsCreatingCategory(false);
+    }
+  }
+
+  async function handleUpdateCategoryColor(category: CategoryListItem, color: string) {
+    if (!session?.accessToken || updatingCategoryId) {
+      return;
+    }
+
+    try {
+      setUpdatingCategoryId(category.id);
+      setCategoryActionErrorMessage(null);
+
+      const updatedCategory = await categoryService.updateCategory(
+        session.accessToken,
+        category.id,
+        {
+          name: category.name,
+          color,
+        },
+      );
+
+      setCategories((current) => addOrReplaceCategory(current, updatedCategory));
+    } catch (error) {
+      if (error instanceof HttpClientError && error.status === 401) {
+        logout();
+        return;
+      }
+
+      setCategoryActionErrorMessage(
+        error instanceof Error ? error.message : 'Não foi possível atualizar a categoria.',
+      );
+    } finally {
+      setUpdatingCategoryId(null);
     }
   }
 
@@ -514,30 +562,40 @@ export function TasksPage() {
     <main className="tasks-page">
       <section className="tasks-page__content" aria-labelledby="tasks-title">
         <header className="tasks-page__header">
-          <div>
-            <p className="tasks-page__eyebrow">TaskFlow</p>
-            <h1 id="tasks-title">Minhas tarefas</h1>
-            <p className="tasks-page__description">
-              Acompanhe seus compromissos cadastrados e mantenha foco no que precisa avançar.
-            </p>
-          </div>
-
           <div className="tasks-page__session" aria-label="Sessão atual">
-            <span>Conectado como</span>
-            <strong>{session?.email}</strong>
-            <Link className="tasks-page__primary-action" to="/tasks/new">
-              Criar tarefa
-            </Link>
+            <div className="tasks-page__session-user">
+              <Icon name="user" />
+              <div>
+                <span>Conectado como </span>
+                <strong>{session?.email}</strong>
+              </div>
+            </div>
             <button type="button" onClick={logout}>
               Sair
             </button>
+          </div>
+
+          <div className="tasks-page__intro">
+            <p className="tasks-page__eyebrow">TaskFlow</p>
+            <h1 id="tasks-title">Minhas tarefas</h1>
+            <p className="tasks-page__description">
+              Acompanhe suas tarefas e mantenha foco no que precisa avançar.
+            </p>
+            <Link className="tasks-page__primary-action" to="/tasks/new">
+              <Icon name="plus" />
+              Criar tarefa
+            </Link>
           </div>
         </header>
 
         <CategorySummary
           categories={categories}
-          errorMessage={categoryErrorMessage}
+          errorMessage={categoryErrorMessage ?? categoryActionErrorMessage}
+          isEditing={isEditingCategories}
           isLoading={isLoadingCategories}
+          onToggleEditing={() => setIsEditingCategories((current) => !current)}
+          onUpdateCategoryColor={handleUpdateCategoryColor}
+          updatingCategoryId={updatingCategoryId}
         />
 
         <TaskSummaryPanel
@@ -567,12 +625,14 @@ export function TasksPage() {
           isCreatingCategory={isCreatingCategory}
           isLoadingCategories={isLoadingCategories}
           isLoading={isLoading}
+          newCategoryColor={newCategoryColor}
           newCategoryName={newCategoryName}
           onCancelEdit={handleCancelEdit}
           onChangeEditValue={handleChangeEditValue}
           onCreateCategory={handleCreateCategory}
           onChangeTaskStatus={handleChangeTaskStatus}
           onDeleteTask={handleDeleteTask}
+          onNewCategoryColorChange={setNewCategoryColor}
           onNewCategoryNameChange={setNewCategoryName}
           onStartEdit={handleStartEdit}
           onUpdateTask={handleUpdateTask}
@@ -587,24 +647,29 @@ export function TasksPage() {
 type CategorySummaryProps = {
   categories: CategoryListItem[];
   errorMessage: string | null;
+  isEditing: boolean;
   isLoading: boolean;
+  onToggleEditing: () => void;
+  onUpdateCategoryColor: (category: CategoryListItem, color: string) => void;
+  updatingCategoryId: string | null;
 };
 
-function CategorySummary({ categories, errorMessage, isLoading }: CategorySummaryProps) {
+function CategorySummary({
+  categories,
+  errorMessage,
+  isEditing,
+  isLoading,
+  onToggleEditing,
+  onUpdateCategoryColor,
+  updatingCategoryId,
+}: CategorySummaryProps) {
   if (isLoading) {
     return (
       <section className="categories-panel" aria-labelledby="categories-title">
-        <h2 id="categories-title">Categorias</h2>
+        <div className="categories-panel__header">
+          <h2 id="categories-title">Categorias</h2>
+        </div>
         <p role="status">Carregando categorias...</p>
-      </section>
-    );
-  }
-
-  if (errorMessage) {
-    return (
-      <section className="categories-panel categories-panel--error" aria-labelledby="categories-title">
-        <h2 id="categories-title">Categorias</h2>
-        <p role="alert">{errorMessage}</p>
       </section>
     );
   }
@@ -612,7 +677,10 @@ function CategorySummary({ categories, errorMessage, isLoading }: CategorySummar
   if (categories.length === 0) {
     return (
       <section className="categories-panel" aria-labelledby="categories-title">
-        <h2 id="categories-title">Categorias</h2>
+        <div className="categories-panel__header">
+          <h2 id="categories-title">Categorias</h2>
+        </div>
+        {errorMessage && <p className="categories-panel__error" role="alert">{errorMessage}</p>}
         <p>Nenhuma categoria cadastrada.</p>
       </section>
     );
@@ -620,10 +688,40 @@ function CategorySummary({ categories, errorMessage, isLoading }: CategorySummar
 
   return (
     <section className="categories-panel" aria-labelledby="categories-title">
-      <h2 id="categories-title">Categorias</h2>
+      <div className="categories-panel__header">
+        <div>
+          <h2 id="categories-title">Categorias</h2>
+        </div>
+
+        <button className="categories-panel__edit-button" type="button" onClick={onToggleEditing}>
+          {isEditing ? 'Concluir edição' : 'Editar categorias'}
+        </button>
+      </div>
+
+      {errorMessage && <p className="categories-panel__error" role="alert">{errorMessage}</p>}
+
       <ul className="categories-panel__list">
         {categories.map((category) => (
-          <li key={category.id}>{category.name}</li>
+          <li
+            key={category.id}
+            style={categoryColorStyle(category.color)}
+          >
+            <span className="categories-panel__swatch" aria-hidden="true" />
+            <span>{category.name}</span>
+
+            {isEditing && (
+              <label className="categories-panel__color-field">
+                <span>Cor</span>
+                <input
+                  type="color"
+                  value={category.color ?? defaultCategoryColor}
+                  aria-label={`Cor da categoria ${category.name}`}
+                  disabled={updatingCategoryId === category.id}
+                  onChange={(event) => onUpdateCategoryColor(category, event.target.value)}
+                />
+              </label>
+            )}
+          </li>
         ))}
       </ul>
     </section>
@@ -663,7 +761,6 @@ function TaskSummaryPanel({ errorMessage, isLoading, summary }: TaskSummaryPanel
       <div className="task-summary-panel__header">
         <div>
           <h2 id="task-summary-title">Resumo das tarefas</h2>
-          <p>Totais da sua sessão atual, sem aplicar os filtros da lista.</p>
         </div>
 
         {isLoading && (
@@ -716,7 +813,6 @@ function TaskFiltersPanel({
       <div className="tasks-filter-panel__header">
         <div>
           <h2 id="tasks-filter-title">Filtros e ordenação</h2>
-          <p>Refine a lista mantendo a consulta da API atualizada.</p>
         </div>
 
         <button
@@ -812,6 +908,7 @@ type TaskListContentProps = {
   isCreatingCategory: boolean;
   isLoadingCategories: boolean;
   isLoading: boolean;
+  newCategoryColor: string;
   newCategoryName: string;
   onCancelEdit: () => void;
   onChangeEditValue: (name: keyof TaskEditValues, value: string) => void;
@@ -822,6 +919,7 @@ type TaskListContentProps = {
     action: StatusTaskAction,
   ) => void;
   onDeleteTask: (taskId: string) => void;
+  onNewCategoryColorChange: (color: string) => void;
   onNewCategoryNameChange: (name: string) => void;
   onStartEdit: (task: TaskListItem) => void;
   onUpdateTask: (event: FormEvent<HTMLFormElement>, taskId: string) => void;
@@ -841,18 +939,25 @@ function TaskListContent({
   isCreatingCategory,
   isLoadingCategories,
   isLoading,
+  newCategoryColor,
   newCategoryName,
   onCancelEdit,
   onChangeEditValue,
   onCreateCategory,
   onChangeTaskStatus,
   onDeleteTask,
+  onNewCategoryColorChange,
   onNewCategoryNameChange,
   onStartEdit,
   onUpdateTask,
   pendingTaskAction,
   tasks,
 }: TaskListContentProps) {
+  const categoriesById = useMemo(
+    () => new Map(categories.map((category) => [category.id, category])),
+    [categories],
+  );
+
   if (isLoading && tasks.length === 0) {
     return (
       <div className="tasks-page__state" role="status">
@@ -905,11 +1010,13 @@ function TaskListContent({
           const isEditing = task.id === editingTaskId && editValues;
           const isUpdating = isTaskActionPending(pendingTaskAction, task.id, 'update');
           const statusActions = getTaskStatusActions(task.status);
+          const category = task.categoryId ? categoriesById.get(task.categoryId) : null;
 
           return (
             <article
               className={isEditing ? 'task-card task-card--editing' : 'task-card'}
               key={task.id}
+              style={categoryColorStyle(category?.color)}
             >
               {isEditing ? (
                 <TaskEditForm
@@ -919,10 +1026,12 @@ function TaskListContent({
                   isCreatingCategory={isCreatingCategory}
                   isLoadingCategories={isLoadingCategories}
                   isLoading={isUpdating}
+                  newCategoryColor={newCategoryColor}
                   newCategoryName={newCategoryName}
                   onCancel={onCancelEdit}
                   onChange={onChangeEditValue}
                   onCreateCategory={onCreateCategory}
+                  onNewCategoryColorChange={onNewCategoryColorChange}
                   onNewCategoryNameChange={onNewCategoryNameChange}
                   onSubmit={(event) => onUpdateTask(event, task.id)}
                   taskId={task.id}
@@ -937,13 +1046,19 @@ function TaskListContent({
                       {task.description && <p>{task.description}</p>}
                     </div>
 
-                    <span className="task-card__status">{statusLabels[task.status]}</span>
+                    <span className={`task-card__status ${getStatusClassName(task.status)}`}>
+                      {statusLabels[task.status]}
+                    </span>
                   </div>
 
                   <dl className="task-card__meta">
                     <div>
                       <dt>Prioridade</dt>
-                      <dd>{priorityLabels[task.priority]}</dd>
+                      <dd>
+                        <span className={`task-card__priority ${getPriorityClassName(task.priority)}`}>
+                          {priorityLabels[task.priority]}
+                        </span>
+                      </dd>
                     </div>
                     <div>
                       <dt>Vencimento</dt>
@@ -951,50 +1066,67 @@ function TaskListContent({
                     </div>
                     <div>
                       <dt>Categoria</dt>
-                      <dd>{task.categoryName ?? 'Sem categoria'}</dd>
+                      <dd>
+                        <span className="task-card__category-chip">
+                          <span className="task-card__category-dot" aria-hidden="true" />
+                          {task.categoryName ?? 'Sem categoria'}
+                        </span>
+                      </dd>
                     </div>
                   </dl>
 
                   <div className="task-card__actions" aria-label={`Ações da tarefa ${task.title}`}>
-                    {statusActions.map((statusAction) => (
+                    <div className="task-card__status-actions">
+                      {statusActions.map((statusAction) => (
+                        <button
+                          className={
+                            statusAction.variant === 'danger'
+                              ? 'task-card__action task-card__action--danger'
+                              : 'task-card__action'
+                          }
+                          type="button"
+                          key={statusAction.action}
+                          onClick={() =>
+                            onChangeTaskStatus(task.id, statusAction.status, statusAction.action)
+                          }
+                          disabled={Boolean(pendingTaskAction)}
+                        >
+                          {isTaskActionPending(pendingTaskAction, task.id, statusAction.action)
+                            ? statusAction.loadingLabel
+                            : statusAction.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="task-card__management-actions">
                       <button
-                        className={
-                          statusAction.variant === 'danger'
-                            ? 'task-card__action task-card__action--danger'
-                            : 'task-card__action'
-                        }
+                        className="task-card__icon-action"
                         type="button"
-                        key={statusAction.action}
-                        onClick={() =>
-                          onChangeTaskStatus(task.id, statusAction.status, statusAction.action)
-                        }
+                        onClick={() => onStartEdit(task)}
                         disabled={Boolean(pendingTaskAction)}
+                        aria-label={`Editar tarefa ${task.title}`}
+                        title="Editar tarefa"
                       >
-                        {isTaskActionPending(pendingTaskAction, task.id, statusAction.action)
-                          ? statusAction.loadingLabel
-                          : statusAction.label}
+                        <Icon name="pencil" />
+                        <span>Editar</span>
                       </button>
-                    ))}
 
-                    <button
-                      className="task-card__action"
-                      type="button"
-                      onClick={() => onStartEdit(task)}
-                      disabled={Boolean(pendingTaskAction)}
-                    >
-                      Editar
-                    </button>
-
-                    <button
-                      className="task-card__action task-card__action--danger"
-                      type="button"
-                      onClick={() => onDeleteTask(task.id)}
-                      disabled={Boolean(pendingTaskAction)}
-                    >
-                      {isTaskActionPending(pendingTaskAction, task.id, 'delete')
-                        ? 'Excluindo...'
-                        : 'Excluir'}
-                    </button>
+                      <button
+                        className="task-card__icon-action task-card__icon-action--danger"
+                        type="button"
+                        onClick={() => onDeleteTask(task.id)}
+                        disabled={Boolean(pendingTaskAction)}
+                        aria-label={`Excluir tarefa ${task.title}`}
+                        title="Excluir tarefa"
+                      >
+                        <Icon name="x" />
+                        <span>
+                          {isTaskActionPending(pendingTaskAction, task.id, 'delete')
+                            ? 'Excluindo...'
+                            : 'Excluir'}
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
@@ -1013,10 +1145,12 @@ type TaskEditFormProps = {
   isCreatingCategory: boolean;
   isLoadingCategories: boolean;
   isLoading: boolean;
+  newCategoryColor: string;
   newCategoryName: string;
   onCancel: () => void;
   onChange: (name: keyof TaskEditValues, value: string) => void;
   onCreateCategory: () => void;
+  onNewCategoryColorChange: (color: string) => void;
   onNewCategoryNameChange: (name: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   taskId: string;
@@ -1031,10 +1165,12 @@ function TaskEditForm({
   isCreatingCategory,
   isLoadingCategories,
   isLoading,
+  newCategoryColor,
   newCategoryName,
   onCancel,
   onChange,
   onCreateCategory,
+  onNewCategoryColorChange,
   onNewCategoryNameChange,
   onSubmit,
   taskId,
@@ -1179,6 +1315,16 @@ function TaskEditForm({
             disabled={isLoading || isCreatingCategory}
             aria-label="Nome da nova categoria"
           />
+          <label className="task-form__color-picker">
+            <span>Cor</span>
+            <input
+              type="color"
+              value={newCategoryColor}
+              onChange={(event) => onNewCategoryColorChange(event.target.value)}
+              disabled={isLoading || isCreatingCategory}
+              aria-label="Cor da nova categoria"
+            />
+          </label>
           <button
             className="task-card__action"
             type="button"
@@ -1200,6 +1346,59 @@ function TaskEditForm({
       </div>
     </form>
   );
+}
+
+type IconName = 'user' | 'plus' | 'pencil' | 'x';
+
+function Icon({ name }: { name: IconName }) {
+  const paths: Record<IconName, string> = {
+    user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0',
+    plus: 'M12 5v14M5 12h14',
+    pencil: 'm4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Zm11.5-14.5 3 3',
+    x: 'M6 6l12 12M18 6 6 18',
+  };
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="icon"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+    >
+      <path d={paths[name]} />
+    </svg>
+  );
+}
+
+function categoryColorStyle(color: string | null | undefined): CSSProperties {
+  return {
+    '--category-color': color ?? defaultCategoryColor,
+  } as CSSProperties;
+}
+
+function getStatusClassName(status: TaskStatus) {
+  const classNames: Record<TaskStatus, string> = {
+    1: 'task-card__status--pending',
+    2: 'task-card__status--in-progress',
+    3: 'task-card__status--completed',
+    4: 'task-card__status--cancelled',
+  };
+
+  return classNames[status];
+}
+
+function getPriorityClassName(priority: TaskPriority) {
+  const classNames: Record<TaskPriority, string> = {
+    1: 'task-card__priority--low',
+    2: 'task-card__priority--medium',
+    3: 'task-card__priority--high',
+  };
+
+  return classNames[priority];
 }
 
 function getTaskStatusActions(status: TaskStatus): TaskStatusActionConfig[] {
