@@ -48,13 +48,38 @@ const sortOptions: Array<{ label: string; sortBy: TaskSortBy; sortDirection: Tas
   { label: 'Menor prioridade', sortBy: 'priority', sortDirection: 'asc' },
 ];
 
+const pendingTaskStatus: TaskStatus = 1;
+const inProgressTaskStatus: TaskStatus = 2;
 const completedTaskStatus: TaskStatus = 3;
+const cancelledTaskStatus: TaskStatus = 4;
 
 type TasksLocationState = {
   createdTask?: TaskListItem;
 } | null;
 
-type TaskAction = 'complete' | 'delete' | 'update';
+type TaskAction =
+  | 'start'
+  | 'pause'
+  | 'complete'
+  | 'cancel'
+  | 'reopen'
+  | 'resume'
+  | 'reactivate'
+  | 'delete'
+  | 'update';
+
+type StatusTaskAction = Extract<
+  TaskAction,
+  'start' | 'pause' | 'complete' | 'cancel' | 'reopen' | 'resume' | 'reactivate'
+>;
+
+type TaskStatusActionConfig = {
+  action: StatusTaskAction;
+  label: string;
+  loadingLabel: string;
+  status: TaskStatus;
+  variant?: 'danger';
+};
 
 type PendingTaskAction = {
   taskId: string;
@@ -248,19 +273,23 @@ export function TasksPage() {
     };
   }, [logout, session?.accessToken]);
 
-  async function handleCompleteTask(taskId: string) {
+  async function handleChangeTaskStatus(
+    taskId: string,
+    status: TaskStatus,
+    action: StatusTaskAction,
+  ) {
     if (!session?.accessToken || pendingTaskAction) {
       return;
     }
 
     try {
-      setPendingTaskAction({ taskId, action: 'complete' });
+      setPendingTaskAction({ taskId, action });
       setActionErrorMessage(null);
 
       const updatedTask = await taskService.updateTaskStatus(
         session.accessToken,
         taskId,
-        completedTaskStatus,
+        status,
       );
 
       setTasks((currentTasks) => replaceTaskForFilters(currentTasks, updatedTask, filters));
@@ -272,7 +301,7 @@ export function TasksPage() {
       }
 
       setActionErrorMessage(
-        error instanceof Error ? error.message : 'Não foi possível concluir a tarefa.',
+        error instanceof Error ? error.message : getStatusActionErrorMessage(action),
       );
     } finally {
       setPendingTaskAction(null);
@@ -542,7 +571,7 @@ export function TasksPage() {
           onCancelEdit={handleCancelEdit}
           onChangeEditValue={handleChangeEditValue}
           onCreateCategory={handleCreateCategory}
-          onCompleteTask={handleCompleteTask}
+          onChangeTaskStatus={handleChangeTaskStatus}
           onDeleteTask={handleDeleteTask}
           onNewCategoryNameChange={setNewCategoryName}
           onStartEdit={handleStartEdit}
@@ -787,7 +816,11 @@ type TaskListContentProps = {
   onCancelEdit: () => void;
   onChangeEditValue: (name: keyof TaskEditValues, value: string) => void;
   onCreateCategory: () => void;
-  onCompleteTask: (taskId: string) => void;
+  onChangeTaskStatus: (
+    taskId: string,
+    status: TaskStatus,
+    action: StatusTaskAction,
+  ) => void;
   onDeleteTask: (taskId: string) => void;
   onNewCategoryNameChange: (name: string) => void;
   onStartEdit: (task: TaskListItem) => void;
@@ -812,7 +845,7 @@ function TaskListContent({
   onCancelEdit,
   onChangeEditValue,
   onCreateCategory,
-  onCompleteTask,
+  onChangeTaskStatus,
   onDeleteTask,
   onNewCategoryNameChange,
   onStartEdit,
@@ -871,6 +904,7 @@ function TaskListContent({
         {tasks.map((task) => {
           const isEditing = task.id === editingTaskId && editValues;
           const isUpdating = isTaskActionPending(pendingTaskAction, task.id, 'update');
+          const statusActions = getTaskStatusActions(task.status);
 
           return (
             <article
@@ -922,16 +956,25 @@ function TaskListContent({
                   </dl>
 
                   <div className="task-card__actions" aria-label={`Ações da tarefa ${task.title}`}>
-                    <button
-                      className="task-card__action"
-                      type="button"
-                      onClick={() => onCompleteTask(task.id)}
-                      disabled={task.status === completedTaskStatus || Boolean(pendingTaskAction)}
-                    >
-                      {isTaskActionPending(pendingTaskAction, task.id, 'complete')
-                        ? 'Concluindo...'
-                        : 'Concluir'}
-                    </button>
+                    {statusActions.map((statusAction) => (
+                      <button
+                        className={
+                          statusAction.variant === 'danger'
+                            ? 'task-card__action task-card__action--danger'
+                            : 'task-card__action'
+                        }
+                        type="button"
+                        key={statusAction.action}
+                        onClick={() =>
+                          onChangeTaskStatus(task.id, statusAction.status, statusAction.action)
+                        }
+                        disabled={Boolean(pendingTaskAction)}
+                      >
+                        {isTaskActionPending(pendingTaskAction, task.id, statusAction.action)
+                          ? statusAction.loadingLabel
+                          : statusAction.label}
+                      </button>
+                    ))}
 
                     <button
                       className="task-card__action"
@@ -1157,6 +1200,95 @@ function TaskEditForm({
       </div>
     </form>
   );
+}
+
+function getTaskStatusActions(status: TaskStatus): TaskStatusActionConfig[] {
+  switch (status) {
+    case pendingTaskStatus:
+      return [
+        {
+          action: 'start',
+          label: 'Iniciar',
+          loadingLabel: 'Iniciando...',
+          status: inProgressTaskStatus,
+        },
+        {
+          action: 'complete',
+          label: 'Concluir',
+          loadingLabel: 'Concluindo...',
+          status: completedTaskStatus,
+        },
+        {
+          action: 'cancel',
+          label: 'Cancelar',
+          loadingLabel: 'Cancelando...',
+          status: cancelledTaskStatus,
+          variant: 'danger',
+        },
+      ];
+    case inProgressTaskStatus:
+      return [
+        {
+          action: 'pause',
+          label: 'Voltar para pendente',
+          loadingLabel: 'Voltando...',
+          status: pendingTaskStatus,
+        },
+        {
+          action: 'complete',
+          label: 'Concluir',
+          loadingLabel: 'Concluindo...',
+          status: completedTaskStatus,
+        },
+        {
+          action: 'cancel',
+          label: 'Cancelar',
+          loadingLabel: 'Cancelando...',
+          status: cancelledTaskStatus,
+          variant: 'danger',
+        },
+      ];
+    case completedTaskStatus:
+      return [
+        {
+          action: 'reopen',
+          label: 'Reabrir',
+          loadingLabel: 'Reabrindo...',
+          status: pendingTaskStatus,
+        },
+        {
+          action: 'resume',
+          label: 'Retomar',
+          loadingLabel: 'Retomando...',
+          status: inProgressTaskStatus,
+        },
+      ];
+    case cancelledTaskStatus:
+      return [
+        {
+          action: 'reactivate',
+          label: 'Reativar',
+          loadingLabel: 'Reativando...',
+          status: pendingTaskStatus,
+        },
+      ];
+    default:
+      return [];
+  }
+}
+
+function getStatusActionErrorMessage(action: StatusTaskAction) {
+  const messages: Record<StatusTaskAction, string> = {
+    start: 'Não foi possível iniciar a tarefa.',
+    pause: 'Não foi possível voltar a tarefa para pendente.',
+    complete: 'Não foi possível concluir a tarefa.',
+    cancel: 'Não foi possível cancelar a tarefa.',
+    reopen: 'Não foi possível reabrir a tarefa.',
+    resume: 'Não foi possível retomar a tarefa.',
+    reactivate: 'Não foi possível reativar a tarefa.',
+  };
+
+  return messages[action];
 }
 
 function mergeCreatedTask(
