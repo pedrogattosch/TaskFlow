@@ -4,6 +4,7 @@ using TaskFlow.Application.Exceptions;
 using TaskFlow.Application.Interfaces.Auth;
 using TaskFlow.Application.UseCases.Categories.CreateCategory;
 using TaskFlow.Application.UseCases.Categories.GetCategories;
+using TaskFlow.Application.UseCases.Categories.UpdateCategory;
 using TaskFlow.Domain.Exceptions;
 
 namespace TaskFlow.API.Controllers;
@@ -14,15 +15,18 @@ public sealed class CategoriesController : ControllerBase
 {
     private readonly ICreateCategoryUseCase _createCategoryUseCase;
     private readonly IGetCategoriesUseCase _getCategoriesUseCase;
+    private readonly IUpdateCategoryUseCase _updateCategoryUseCase;
     private readonly IJwtTokenValidator _jwtTokenValidator;
 
     public CategoriesController(
         ICreateCategoryUseCase createCategoryUseCase,
         IGetCategoriesUseCase getCategoriesUseCase,
+        IUpdateCategoryUseCase updateCategoryUseCase,
         IJwtTokenValidator jwtTokenValidator)
     {
         _createCategoryUseCase = createCategoryUseCase;
         _getCategoriesUseCase = getCategoriesUseCase;
+        _updateCategoryUseCase = updateCategoryUseCase;
         _jwtTokenValidator = jwtTokenValidator;
     }
 
@@ -81,6 +85,54 @@ public sealed class CategoriesController : ControllerBase
         catch (ApplicationUnauthorizedException exception)
         {
             return Unauthorized(CreateProblem(exception.Message, StatusCodes.Status401Unauthorized));
+        }
+        catch (ApplicationConflictException exception)
+        {
+            return Conflict(CreateProblem(exception.Message, StatusCodes.Status409Conflict));
+        }
+    }
+
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(CategoryResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateCategory(
+        Guid id,
+        [FromBody] UpdateCategoryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetAuthenticatedUserId();
+
+        if (!userId.HasValue)
+            return Unauthorized(CreateProblem("Usuário não autenticado.", StatusCodes.Status401Unauthorized));
+
+        try
+        {
+            var response = await _updateCategoryUseCase.ExecuteAsync(
+                userId.Value,
+                id,
+                request,
+                cancellationToken);
+
+            return Ok(response);
+        }
+        catch (ApplicationValidationException exception)
+        {
+            return BadRequest(CreateProblem(exception.Message, StatusCodes.Status400BadRequest));
+        }
+        catch (DomainException exception)
+        {
+            return BadRequest(CreateProblem(exception.Message, StatusCodes.Status400BadRequest));
+        }
+        catch (ApplicationUnauthorizedException exception)
+        {
+            return Unauthorized(CreateProblem(exception.Message, StatusCodes.Status401Unauthorized));
+        }
+        catch (ApplicationNotFoundException exception)
+        {
+            return NotFound(CreateProblem(exception.Message, StatusCodes.Status404NotFound));
         }
         catch (ApplicationConflictException exception)
         {
