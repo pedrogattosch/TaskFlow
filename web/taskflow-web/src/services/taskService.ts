@@ -3,6 +3,7 @@ import type {
   CreateTaskInput,
   TaskListItem,
   TaskQueryInput,
+  TaskSummary,
   TaskStatus,
   UpdateTaskInput,
 } from '../types/task';
@@ -10,6 +11,10 @@ import type {
 export const taskService = {
   async getTasks(accessToken: string, query: TaskQueryInput = {}) {
     return getJson<TaskListItem[]>(buildTasksPath(query), { accessToken });
+  },
+
+  async getTaskSummary(accessToken: string) {
+    return getJson<TaskSummary>('/tasks/summary', { accessToken });
   },
 
   async createTask(accessToken: string, task: CreateTaskInput) {

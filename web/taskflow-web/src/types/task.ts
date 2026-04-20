@@ -14,6 +14,13 @@ export type TaskQueryInput = {
   sortDirection?: TaskSortDirection;
 };
 
+export type TaskSummary = {
+  pending: number;
+  inProgress: number;
+  completed: number;
+  cancelled: number;
+};
+
 export type TaskListItem = {
   id: string;
   title: string;

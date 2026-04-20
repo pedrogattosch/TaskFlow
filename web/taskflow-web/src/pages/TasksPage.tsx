@@ -11,6 +11,7 @@ import type {
   TaskSortBy,
   TaskSortDirection,
   TaskStatus,
+  TaskSummary,
   UpdateTaskInput,
 } from '../types/task';
 
@@ -91,16 +92,64 @@ export function TasksPage() {
   const [isLoading, setIsLoading] = useState(
     !createdTask || !taskMatchesFilters(createdTask, filters),
   );
+  const [taskSummary, setTaskSummary] = useState<TaskSummary | null>(null);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [summaryErrorMessage, setSummaryErrorMessage] = useState<string | null>(null);
   const [categoryErrorMessage, setCategoryErrorMessage] = useState<string | null>(null);
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
+  const [summaryReloadKey, setSummaryReloadKey] = useState(0);
   const [pendingTaskAction, setPendingTaskAction] = useState<PendingTaskAction>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<TaskEditValues | null>(null);
   const [editErrors, setEditErrors] = useState<TaskEditErrors>({});
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadTaskSummary() {
+      if (!session?.accessToken) {
+        return;
+      }
+
+      try {
+        setIsLoadingSummary(true);
+        setSummaryErrorMessage(null);
+
+        const response = await taskService.getTaskSummary(session.accessToken);
+
+        if (isMounted) {
+          setTaskSummary(response);
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (error instanceof HttpClientError && error.status === 401) {
+          logout();
+          return;
+        }
+
+        setSummaryErrorMessage(
+          error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel carregar o resumo.',
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoadingSummary(false);
+        }
+      }
+    }
+
+    loadTaskSummary();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [logout, session?.accessToken, summaryReloadKey]);
 
   useEffect(() => {
     let isMounted = true;
@@ -215,6 +264,7 @@ export function TasksPage() {
       );
 
       setTasks((currentTasks) => replaceTaskForFilters(currentTasks, updatedTask, filters));
+      setSummaryReloadKey((current) => current + 1);
     } catch (error) {
       if (error instanceof HttpClientError && error.status === 401) {
         logout();
@@ -241,6 +291,7 @@ export function TasksPage() {
       await taskService.deleteTask(session.accessToken, taskId);
 
       setTasks((currentTasks) => currentTasks.filter((task) => task.id !== taskId));
+      setSummaryReloadKey((current) => current + 1);
 
       if (editingTaskId === taskId) {
         handleCancelEdit();
@@ -289,6 +340,7 @@ export function TasksPage() {
       const updatedTask = await taskService.updateTask(session.accessToken, taskId, payload);
 
       setTasks((currentTasks) => replaceTaskForFilters(currentTasks, updatedTask, filters));
+      setSummaryReloadKey((current) => current + 1);
       handleCancelEdit();
     } catch (error) {
       if (error instanceof HttpClientError && error.status === 401) {
@@ -459,6 +511,12 @@ export function TasksPage() {
           isLoading={isLoadingCategories}
         />
 
+        <TaskSummaryPanel
+          errorMessage={summaryErrorMessage}
+          isLoading={isLoadingSummary}
+          summary={taskSummary}
+        />
+
         <TaskFiltersPanel
           categories={categories}
           filters={filters}
@@ -539,6 +597,67 @@ function CategorySummary({ categories, errorMessage, isLoading }: CategorySummar
           <li key={category.id}>{category.name}</li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+type TaskSummaryPanelProps = {
+  errorMessage: string | null;
+  isLoading: boolean;
+  summary: TaskSummary | null;
+};
+
+function TaskSummaryPanel({ errorMessage, isLoading, summary }: TaskSummaryPanelProps) {
+  if (errorMessage && !summary) {
+    return (
+      <section
+        className="task-summary-panel task-summary-panel--error"
+        aria-labelledby="task-summary-title"
+      >
+        <div>
+          <h2 id="task-summary-title">Resumo das tarefas</h2>
+          <p role="alert">{errorMessage}</p>
+        </div>
+      </section>
+    );
+  }
+
+  const items = [
+    { label: 'Pendentes', value: summary?.pending ?? 0 },
+    { label: 'Em andamento', value: summary?.inProgress ?? 0 },
+    { label: 'Concluídas', value: summary?.completed ?? 0 },
+    { label: 'Canceladas', value: summary?.cancelled ?? 0 },
+  ];
+
+  return (
+    <section className="task-summary-panel" aria-labelledby="task-summary-title">
+      <div className="task-summary-panel__header">
+        <div>
+          <h2 id="task-summary-title">Resumo das tarefas</h2>
+          <p>Totais da sua sessão atual, sem aplicar os filtros da lista.</p>
+        </div>
+
+        {isLoading && (
+          <span className="task-summary-panel__status" role="status">
+            {summary ? 'Atualizando...' : 'Carregando...'}
+          </span>
+        )}
+      </div>
+
+      {errorMessage && (
+        <p className="task-summary-panel__error" role="alert">
+          {errorMessage}
+        </p>
+      )}
+
+      <dl className="task-summary-panel__grid">
+        {items.map((item) => (
+          <div className="task-summary-panel__item" key={item.label}>
+            <dt>{item.label}</dt>
+            <dd>{item.value}</dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }
