@@ -1,11 +1,18 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { categoryService } from '../services/categoryService';
 import { HttpClientError } from '../services/httpClient';
 import { taskService } from '../services/taskService';
 import type { CategoryListItem } from '../types/category';
-import type { TaskListItem, TaskPriority, TaskStatus, UpdateTaskInput } from '../types/task';
+import type {
+  TaskListItem,
+  TaskPriority,
+  TaskSortBy,
+  TaskSortDirection,
+  TaskStatus,
+  UpdateTaskInput,
+} from '../types/task';
 
 const priorityLabels: Record<TaskPriority, string> = {
   1: 'Baixa',
@@ -24,6 +31,20 @@ const priorityOptions: Array<{ label: string; value: TaskPriority }> = [
   { label: 'Baixa', value: 1 },
   { label: 'Média', value: 2 },
   { label: 'Alta', value: 3 },
+];
+
+const statusOptions: Array<{ label: string; value: TaskStatus }> = [
+  { label: 'Pendente', value: 1 },
+  { label: 'Em andamento', value: 2 },
+  { label: 'Concluída', value: 3 },
+  { label: 'Cancelada', value: 4 },
+];
+
+const sortOptions: Array<{ label: string; sortBy: TaskSortBy; sortDirection: TaskSortDirection }> = [
+  { label: 'Prazo mais próximo', sortBy: 'dueDate', sortDirection: 'asc' },
+  { label: 'Prazo mais distante', sortBy: 'dueDate', sortDirection: 'desc' },
+  { label: 'Maior prioridade', sortBy: 'priority', sortDirection: 'desc' },
+  { label: 'Menor prioridade', sortBy: 'priority', sortDirection: 'asc' },
 ];
 
 const completedTaskStatus: TaskStatus = 3;
@@ -49,13 +70,27 @@ type TaskEditValues = {
 
 type TaskEditErrors = Partial<Record<keyof TaskEditValues, string>>;
 
+type TaskListFilters = {
+  status: TaskStatus | '';
+  priority: TaskPriority | '';
+  categoryId: string;
+  sortBy: TaskSortBy;
+  sortDirection: TaskSortDirection;
+};
+
 export function TasksPage() {
   const { logout, session } = useAuth();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filters = useMemo(() => getFiltersFromSearchParams(searchParams), [searchParams]);
   const createdTask = (location.state as TasksLocationState)?.createdTask ?? null;
-  const [tasks, setTasks] = useState<TaskListItem[]>(() => mergeCreatedTask([], createdTask));
+  const [tasks, setTasks] = useState<TaskListItem[]>(() =>
+    mergeCreatedTask([], createdTask, filters),
+  );
   const [categories, setCategories] = useState<CategoryListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(!createdTask);
+  const [isLoading, setIsLoading] = useState(
+    !createdTask || !taskMatchesFilters(createdTask, filters),
+  );
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [categoryErrorMessage, setCategoryErrorMessage] = useState<string | null>(null);
@@ -79,10 +114,10 @@ export function TasksPage() {
         setIsLoading(true);
         setErrorMessage(null);
 
-        const response = await taskService.getTasks(session.accessToken);
+        const response = await taskService.getTasks(session.accessToken, toTaskQueryInput(filters));
 
         if (isMounted) {
-          setTasks(mergeCreatedTask(response, createdTask));
+          setTasks(mergeCreatedTask(response, createdTask, filters));
         }
       } catch (error) {
         if (!isMounted) {
@@ -109,7 +144,16 @@ export function TasksPage() {
     return () => {
       isMounted = false;
     };
-  }, [createdTask?.id, logout, session?.accessToken]);
+  }, [
+    createdTask?.id,
+    filters.categoryId,
+    filters.priority,
+    filters.sortBy,
+    filters.sortDirection,
+    filters.status,
+    logout,
+    session?.accessToken,
+  ]);
 
   useEffect(() => {
     let isMounted = true;
@@ -170,9 +214,7 @@ export function TasksPage() {
         completedTaskStatus,
       );
 
-      setTasks((currentTasks) =>
-        currentTasks.map((task) => (task.id === taskId ? updatedTask : task)),
-      );
+      setTasks((currentTasks) => replaceTaskForFilters(currentTasks, updatedTask, filters));
     } catch (error) {
       if (error instanceof HttpClientError && error.status === 401) {
         logout();
@@ -246,9 +288,7 @@ export function TasksPage() {
 
       const updatedTask = await taskService.updateTask(session.accessToken, taskId, payload);
 
-      setTasks((currentTasks) =>
-        currentTasks.map((task) => (task.id === taskId ? updatedTask : task)),
-      );
+      setTasks((currentTasks) => replaceTaskForFilters(currentTasks, updatedTask, filters));
       handleCancelEdit();
     } catch (error) {
       if (error instanceof HttpClientError && error.status === 401) {
@@ -334,6 +374,61 @@ export function TasksPage() {
     });
   }
 
+  function handleFilterChange(name: keyof TaskListFilters, value: string) {
+    const nextFilters: TaskListFilters = {
+      ...filters,
+      [name]:
+        (name === 'status' || name === 'priority') && value
+          ? Number(value)
+          : value,
+    } as TaskListFilters;
+
+    updateSearchParams(nextFilters);
+  }
+
+  function handleSortChange(value: string) {
+    const [sortBy, sortDirection] = value.split(':') as [TaskSortBy, TaskSortDirection];
+
+    updateSearchParams({
+      ...filters,
+      sortBy,
+      sortDirection,
+    });
+  }
+
+  function handleClearFilters() {
+    updateSearchParams({
+      status: '',
+      priority: '',
+      categoryId: '',
+      sortBy: 'dueDate',
+      sortDirection: 'asc',
+    });
+  }
+
+  function updateSearchParams(nextFilters: TaskListFilters) {
+    const nextParams = new URLSearchParams();
+
+    if (nextFilters.status) {
+      nextParams.set('status', String(nextFilters.status));
+    }
+
+    if (nextFilters.priority) {
+      nextParams.set('priority', String(nextFilters.priority));
+    }
+
+    if (nextFilters.categoryId) {
+      nextParams.set('categoryId', nextFilters.categoryId);
+    }
+
+    if (nextFilters.sortBy !== 'dueDate' || nextFilters.sortDirection !== 'asc') {
+      nextParams.set('sortBy', nextFilters.sortBy);
+      nextParams.set('sortDirection', nextFilters.sortDirection);
+    }
+
+    setSearchParams(nextParams);
+  }
+
   return (
     <main className="tasks-page">
       <section className="tasks-page__content" aria-labelledby="tasks-title">
@@ -364,6 +459,15 @@ export function TasksPage() {
           isLoading={isLoadingCategories}
         />
 
+        <TaskFiltersPanel
+          categories={categories}
+          filters={filters}
+          isLoading={isLoading || isLoadingCategories}
+          onChange={handleFilterChange}
+          onClear={handleClearFilters}
+          onSortChange={handleSortChange}
+        />
+
         <TaskListContent
           actionErrorMessage={actionErrorMessage}
           categories={categories}
@@ -372,6 +476,7 @@ export function TasksPage() {
           editingTaskId={editingTaskId}
           editValues={editValues}
           errorMessage={errorMessage}
+          hasActiveFilters={Boolean(filters.status || filters.priority || filters.categoryId)}
           isCreatingCategory={isCreatingCategory}
           isLoadingCategories={isLoadingCategories}
           isLoading={isLoading}
@@ -438,6 +543,115 @@ function CategorySummary({ categories, errorMessage, isLoading }: CategorySummar
   );
 }
 
+type TaskFiltersPanelProps = {
+  categories: CategoryListItem[];
+  filters: TaskListFilters;
+  isLoading: boolean;
+  onChange: (name: keyof TaskListFilters, value: string) => void;
+  onClear: () => void;
+  onSortChange: (value: string) => void;
+};
+
+function TaskFiltersPanel({
+  categories,
+  filters,
+  isLoading,
+  onChange,
+  onClear,
+  onSortChange,
+}: TaskFiltersPanelProps) {
+  const hasActiveFilters = Boolean(filters.status || filters.priority || filters.categoryId);
+  const sortValue = `${filters.sortBy}:${filters.sortDirection}`;
+
+  return (
+    <section className="tasks-filter-panel" aria-labelledby="tasks-filter-title">
+      <div className="tasks-filter-panel__header">
+        <div>
+          <h2 id="tasks-filter-title">Filtros e ordenação</h2>
+          <p>Refine a lista mantendo a consulta da API atualizada.</p>
+        </div>
+
+        <button
+          className="task-card__action"
+          type="button"
+          onClick={onClear}
+          disabled={isLoading || !hasActiveFilters}
+        >
+          Limpar filtros
+        </button>
+      </div>
+
+      <div className="tasks-filter-panel__grid">
+        <label className="tasks-filter-panel__field">
+          <span>Status</span>
+          <select
+            value={filters.status}
+            onChange={(event) => onChange('status', event.target.value)}
+            disabled={isLoading}
+          >
+            <option value="">Todos</option>
+            {statusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="tasks-filter-panel__field">
+          <span>Prioridade</span>
+          <select
+            value={filters.priority}
+            onChange={(event) => onChange('priority', event.target.value)}
+            disabled={isLoading}
+          >
+            <option value="">Todas</option>
+            {priorityOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="tasks-filter-panel__field">
+          <span>Categoria</span>
+          <select
+            value={filters.categoryId}
+            onChange={(event) => onChange('categoryId', event.target.value)}
+            disabled={isLoading || categories.length === 0}
+          >
+            <option value="">Todas</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="tasks-filter-panel__field">
+          <span>Ordenar por</span>
+          <select
+            value={sortValue}
+            onChange={(event) => onSortChange(event.target.value)}
+            disabled={isLoading}
+          >
+            {sortOptions.map((option) => (
+              <option
+                key={`${option.sortBy}:${option.sortDirection}`}
+                value={`${option.sortBy}:${option.sortDirection}`}
+              >
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </section>
+  );
+}
+
 type TaskListContentProps = {
   actionErrorMessage: string | null;
   categories: CategoryListItem[];
@@ -446,6 +660,7 @@ type TaskListContentProps = {
   editingTaskId: string | null;
   editValues: TaskEditValues | null;
   errorMessage: string | null;
+  hasActiveFilters: boolean;
   isCreatingCategory: boolean;
   isLoadingCategories: boolean;
   isLoading: boolean;
@@ -470,6 +685,7 @@ function TaskListContent({
   editingTaskId,
   editValues,
   errorMessage,
+  hasActiveFilters,
   isCreatingCategory,
   isLoadingCategories,
   isLoading,
@@ -504,10 +720,16 @@ function TaskListContent({
   if (tasks.length === 0) {
     return (
       <div className="tasks-page__state">
-        <p>Nenhuma tarefa encontrada para sua conta.</p>
-        <Link className="tasks-page__state-action" to="/tasks/new">
-          Criar primeira tarefa
-        </Link>
+        <p>
+          {hasActiveFilters
+            ? 'Nenhuma tarefa encontrada para os filtros selecionados.'
+            : 'Nenhuma tarefa encontrada para sua conta.'}
+        </p>
+        {!hasActiveFilters && (
+          <Link className="tasks-page__state-action" to="/tasks/new">
+            Criar primeira tarefa
+          </Link>
+        )}
       </div>
     );
   }
@@ -818,12 +1040,143 @@ function TaskEditForm({
   );
 }
 
-function mergeCreatedTask(tasks: TaskListItem[], createdTask: TaskListItem | null) {
-  if (!createdTask || tasks.some((task) => task.id === createdTask.id)) {
+function mergeCreatedTask(
+  tasks: TaskListItem[],
+  createdTask: TaskListItem | null,
+  filters: TaskListFilters,
+) {
+  if (
+    !createdTask ||
+    !taskMatchesFilters(createdTask, filters) ||
+    tasks.some((task) => task.id === createdTask.id)
+  ) {
     return tasks;
   }
 
   return [createdTask, ...tasks];
+}
+
+function getFiltersFromSearchParams(searchParams: URLSearchParams): TaskListFilters {
+  return {
+    status: parseStatus(searchParams.get('status')),
+    priority: parsePriority(searchParams.get('priority')),
+    categoryId: searchParams.get('categoryId') ?? '',
+    sortBy: parseSortBy(searchParams.get('sortBy')),
+    sortDirection: parseSortDirection(searchParams.get('sortDirection')),
+  };
+}
+
+function toTaskQueryInput(filters: TaskListFilters) {
+  return {
+    status: filters.status || undefined,
+    priority: filters.priority || undefined,
+    categoryId: filters.categoryId || undefined,
+    sortBy: filters.sortBy,
+    sortDirection: filters.sortDirection,
+  };
+}
+
+function taskMatchesFilters(task: TaskListItem, filters: TaskListFilters) {
+  if (filters.status && task.status !== filters.status) {
+    return false;
+  }
+
+  if (filters.priority && task.priority !== filters.priority) {
+    return false;
+  }
+
+  if (filters.categoryId && task.categoryId !== filters.categoryId) {
+    return false;
+  }
+
+  return true;
+}
+
+function replaceTaskForFilters(
+  tasks: TaskListItem[],
+  updatedTask: TaskListItem,
+  filters: TaskListFilters,
+) {
+  const withoutTask = tasks.filter((task) => task.id !== updatedTask.id);
+
+  if (!taskMatchesFilters(updatedTask, filters)) {
+    return withoutTask;
+  }
+
+  return sortTasksForFilters([...withoutTask, updatedTask], filters);
+}
+
+function sortTasksForFilters(tasks: TaskListItem[], filters: TaskListFilters) {
+  return [...tasks].sort((left, right) => compareTasks(left, right, filters));
+}
+
+function compareTasks(left: TaskListItem, right: TaskListItem, filters: TaskListFilters) {
+  if (filters.sortBy === 'priority') {
+    const priorityComparison = compareNumbers(left.priority, right.priority, filters.sortDirection);
+
+    if (priorityComparison !== 0) {
+      return priorityComparison;
+    }
+
+    return compareDueDates(left.dueDate, right.dueDate, 'asc');
+  }
+
+  const dueDateComparison = compareDueDates(left.dueDate, right.dueDate, filters.sortDirection);
+
+  if (dueDateComparison !== 0) {
+    return dueDateComparison;
+  }
+
+  return compareNumbers(left.priority, right.priority, 'desc');
+}
+
+function compareNumbers(left: number, right: number, direction: TaskSortDirection) {
+  return direction === 'desc' ? right - left : left - right;
+}
+
+function compareDueDates(left: string | null, right: string | null, direction: TaskSortDirection) {
+  if (!left && !right) {
+    return 0;
+  }
+
+  if (!left) {
+    return 1;
+  }
+
+  if (!right) {
+    return -1;
+  }
+
+  const leftValue = new Date(left).getTime();
+  const rightValue = new Date(right).getTime();
+
+  return direction === 'desc' ? rightValue - leftValue : leftValue - rightValue;
+}
+
+function parseStatus(value: string | null): TaskStatus | '' {
+  const status = Number(value);
+  return isTaskStatus(status) ? status : '';
+}
+
+function parsePriority(value: string | null): TaskPriority | '' {
+  const priority = Number(value);
+  return isTaskPriority(priority) ? priority : '';
+}
+
+function parseSortBy(value: string | null): TaskSortBy {
+  return value === 'priority' ? 'priority' : 'dueDate';
+}
+
+function parseSortDirection(value: string | null): TaskSortDirection {
+  return value === 'desc' ? 'desc' : 'asc';
+}
+
+function isTaskStatus(value: number): value is TaskStatus {
+  return statusOptions.some((option) => option.value === value);
+}
+
+function isTaskPriority(value: number): value is TaskPriority {
+  return priorityOptions.some((option) => option.value === value);
 }
 
 function isTaskActionPending(

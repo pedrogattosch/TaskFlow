@@ -1,9 +1,15 @@
 import { deleteJson, getJson, patchJson, postJson, putJson } from './httpClient';
-import type { CreateTaskInput, TaskListItem, TaskStatus, UpdateTaskInput } from '../types/task';
+import type {
+  CreateTaskInput,
+  TaskListItem,
+  TaskQueryInput,
+  TaskStatus,
+  UpdateTaskInput,
+} from '../types/task';
 
 export const taskService = {
-  async getTasks(accessToken: string) {
-    return getJson<TaskListItem[]>('/tasks', { accessToken });
+  async getTasks(accessToken: string, query: TaskQueryInput = {}) {
+    return getJson<TaskListItem[]>(buildTasksPath(query), { accessToken });
   },
 
   async createTask(accessToken: string, task: CreateTaskInput) {
@@ -30,3 +36,24 @@ export const taskService = {
     return deleteJson(`/tasks/${encodeURIComponent(taskId)}`, { accessToken });
   },
 };
+
+function buildTasksPath(query: TaskQueryInput) {
+  const params = new URLSearchParams();
+
+  if (query.status) {
+    params.set('status', String(query.status));
+  }
+
+  if (query.priority) {
+    params.set('priority', String(query.priority));
+  }
+
+  if (query.categoryId) {
+    params.set('categoryId', query.categoryId);
+  }
+
+  params.set('sortBy', query.sortBy ?? 'dueDate');
+  params.set('sortDirection', query.sortDirection ?? 'asc');
+
+  return `/tasks?${params.toString()}`;
+}

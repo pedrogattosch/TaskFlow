@@ -2,6 +2,18 @@ export type TaskPriority = 1 | 2 | 3;
 
 export type TaskStatus = 1 | 2 | 3 | 4;
 
+export type TaskSortBy = 'dueDate' | 'priority';
+
+export type TaskSortDirection = 'asc' | 'desc';
+
+export type TaskQueryInput = {
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  categoryId?: string;
+  sortBy?: TaskSortBy;
+  sortDirection?: TaskSortDirection;
+};
+
 export type TaskListItem = {
   id: string;
   title: string;
