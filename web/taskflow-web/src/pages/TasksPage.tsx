@@ -106,6 +106,8 @@ type TaskListFilters = {
   sortDirection: TaskSortDirection;
 };
 
+type TaskViewMode = 'list' | 'blocks';
+
 export function TasksPage() {
   const { logout, session } = useAuth();
   const location = useLocation();
@@ -137,6 +139,7 @@ export function TasksPage() {
   const [isEditingCategories, setIsEditingCategories] = useState(false);
   const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(null);
   const [categoryActionErrorMessage, setCategoryActionErrorMessage] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<TaskViewMode>('list');
 
   useEffect(() => {
     let isMounted = true;
@@ -613,6 +616,12 @@ export function TasksPage() {
           onSortChange={handleSortChange}
         />
 
+        <TaskViewSelector
+          taskCount={tasks.length}
+          viewMode={viewMode}
+          onChange={setViewMode}
+        />
+
         <TaskListContent
           actionErrorMessage={actionErrorMessage}
           categories={categories}
@@ -638,6 +647,7 @@ export function TasksPage() {
           onUpdateTask={handleUpdateTask}
           pendingTaskAction={pendingTaskAction}
           tasks={tasks}
+          viewMode={viewMode}
         />
       </section>
     </main>
@@ -896,6 +906,44 @@ function TaskFiltersPanel({
   );
 }
 
+type TaskViewSelectorProps = {
+  taskCount: number;
+  viewMode: TaskViewMode;
+  onChange: (viewMode: TaskViewMode) => void;
+};
+
+function TaskViewSelector({ taskCount, viewMode, onChange }: TaskViewSelectorProps) {
+  return (
+    <section className="task-view-selector" aria-labelledby="task-view-title">
+      <div>
+        <h2 id="task-view-title">Visualização</h2>
+      </div>
+
+      <div className="task-view-selector__controls" aria-label="Modo de visualização">
+        <button
+          className={viewMode === 'list' ? 'task-view-selector__button task-view-selector__button--active' : 'task-view-selector__button'}
+          type="button"
+          onClick={() => onChange('list')}
+          aria-pressed={viewMode === 'list'}
+        >
+          <Icon name="list" />
+          Lista
+        </button>
+
+        <button
+          className={viewMode === 'blocks' ? 'task-view-selector__button task-view-selector__button--active' : 'task-view-selector__button'}
+          type="button"
+          onClick={() => onChange('blocks')}
+          aria-pressed={viewMode === 'blocks'}
+        >
+          <Icon name="grid" />
+          Blocos
+        </button>
+      </div>
+    </section>
+  );
+}
+
 type TaskListContentProps = {
   actionErrorMessage: string | null;
   categories: CategoryListItem[];
@@ -925,6 +973,7 @@ type TaskListContentProps = {
   onUpdateTask: (event: FormEvent<HTMLFormElement>, taskId: string) => void;
   pendingTaskAction: PendingTaskAction;
   tasks: TaskListItem[];
+  viewMode: TaskViewMode;
 };
 
 function TaskListContent({
@@ -952,6 +1001,7 @@ function TaskListContent({
   onUpdateTask,
   pendingTaskAction,
   tasks,
+  viewMode,
 }: TaskListContentProps) {
   const categoriesById = useMemo(
     () => new Map(categories.map((category) => [category.id, category])),
@@ -1005,7 +1055,14 @@ function TaskListContent({
         </div>
       )}
 
-      <div className="tasks-page__list" aria-label="Lista de tarefas">
+      <div
+        className={
+          viewMode === 'blocks'
+            ? 'tasks-page__list tasks-page__list--blocks'
+            : 'tasks-page__list'
+        }
+        aria-label={viewMode === 'blocks' ? 'Tarefas em blocos' : 'Lista de tarefas'}
+      >
         {tasks.map((task) => {
           const isEditing = task.id === editingTaskId && editValues;
           const isUpdating = isTaskActionPending(pendingTaskAction, task.id, 'update');
@@ -1348,7 +1405,7 @@ function TaskEditForm({
   );
 }
 
-type IconName = 'user' | 'plus' | 'pencil' | 'x';
+type IconName = 'user' | 'plus' | 'pencil' | 'x' | 'list' | 'grid';
 
 function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, string> = {
@@ -1356,6 +1413,8 @@ function Icon({ name }: { name: IconName }) {
     plus: 'M12 5v14M5 12h14',
     pencil: 'm4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Zm11.5-14.5 3 3',
     x: 'M6 6l12 12M18 6 6 18',
+    list: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',
+    grid: 'M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h6v6h-6v-6Z',
   };
 
   return (
