@@ -2,7 +2,6 @@
   <Folder Name="/src/">
     <Project Path="TaskFlow.API/TaskFlow.API.csproj" />
     <Project Path="TaskFlow.Application/TaskFlow.Application.csproj" />
-    <Project Path="TaskFlow.CrossCutting/TaskFlow.CrossCutting.csproj" />
     <Project Path="TaskFlow.Domain/TaskFlow.Domain.csproj" />
     <Project Path="TaskFlow.Infrastructure/TaskFlow.Infrastructure.csproj" />
   </Folder>
