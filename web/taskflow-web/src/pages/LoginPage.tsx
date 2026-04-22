@@ -42,8 +42,7 @@ export function LoginPage() {
           <BrandMark/>
           <h1 id="login-title">Entre na sua conta</h1>
           <p className="login-page__description">
-            Acesse seu espaço para organizar as tarefas, acompanhar os prazos e manter o trabalho em
-            movimento.
+            Acesse seu espaço para organizar as tarefas, acompanhar os prazos e manter o trabalho em movimento.
           </p>
           <p className="login-page__secondary-action">
             Ainda não tem conta? <Link to="/register">Criar conta</Link>
