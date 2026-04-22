@@ -1,0 +1,13 @@
+.git
+.gitignore
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/.DS_Store
+**/*.user
+**/*.suo
+**/*.log
+deploy/.env
+deploy/.env.local
+deploy/.env.production

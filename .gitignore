@@ -289,6 +289,11 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# Docker environment files
+deploy/.env
+deploy/.env.local
+deploy/.env.production
+
 # Visual Studio 6 build log
 *.plg
 
