@@ -39,9 +39,7 @@ export function LoginPage() {
     <main className="login-page">
       <section className="login-page__content" aria-labelledby="login-title">
         <div className="login-page__intro">
-          <BrandMark
-            tagline="Centralize prioridades, acompanhe prazos e mantenha o trabalho fluindo."
-          />
+          <BrandMark/>
           <h1 id="login-title">Entre na sua conta</h1>
           <p className="login-page__description">
             Acesse seu espaço para organizar as tarefas, acompanhar os prazos e manter o trabalho em

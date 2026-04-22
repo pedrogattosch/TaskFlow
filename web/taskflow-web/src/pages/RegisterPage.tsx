@@ -36,9 +36,7 @@ export function RegisterPage() {
     <main className="login-page">
       <section className="login-page__content" aria-labelledby="register-title">
         <div className="login-page__intro">
-          <BrandMark
-            tagline="Organize prioridades desde o primeiro acesso e acompanhe cada entrega com clareza."
-          />
+          <BrandMark/>
           <h1 id="register-title">Crie sua conta</h1>
           <p className="login-page__description">
             Comece com um espaço simples para organizar prioridades, manter prazos visíveis e
