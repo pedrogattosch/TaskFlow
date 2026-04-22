@@ -1,0 +1,80 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-dotnet:
+    name: Validate .NET
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore solution
+        run: dotnet restore src/TaskFlow.slnx
+
+      - name: Build solution
+        run: dotnet build src/TaskFlow.slnx -c Release --no-restore
+
+      - name: Run unit tests
+        run: dotnet test tests/TaskFlow.UnitTests/TaskFlow.UnitTests.csproj -c Release --no-build
+
+      - name: Run integration tests
+        run: dotnet test tests/TaskFlow.IntegrationTests/TaskFlow.IntegrationTests.csproj -c Release --no-build
+
+  validate-frontend:
+    name: Validate front-end
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/taskflow-web/package-lock.json
+
+      - name: Install front-end dependencies
+        working-directory: web/taskflow-web
+        run: npm ci
+
+      - name: Build front-end
+        working-directory: web/taskflow-web
+        run: npm run build
+
+  validate-docker:
+    name: Validate Docker
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate local compose file
+        run: docker compose --env-file deploy/.env.example -f deploy/docker-compose.yml config
+
+      - name: Validate production compose file
+        run: docker compose --env-file deploy/.env.production.example -f deploy/docker-compose.production.yml config
+
+      - name: Build local deploy images
+        run: docker compose --env-file deploy/.env.example -f deploy/docker-compose.yml build api migrator web tests
+
+      - name: Build production deploy images
+        run: docker compose --env-file deploy/.env.production.example -f deploy/docker-compose.production.yml build
