@@ -808,7 +808,6 @@ function CategorySummary({
 
             {isEditing && (
               <label className="categories-panel__color-field">
-                <span>Cor</span>
                 <input
                   type="color"
                   value={category.color ?? defaultCategoryColor}
@@ -1571,7 +1570,6 @@ function TaskEditForm({
             aria-label="Nome da nova categoria"
           />
           <label className="task-form__color-picker">
-            <span>Cor</span>
             <input
               type="color"
               value={newCategoryColor}
@@ -1687,7 +1685,7 @@ function getTaskStatusActions(status: TaskStatus): TaskStatusActionConfig[] {
       return [
         {
           action: 'pause',
-          label: 'Voltar para pendente',
+          label: 'Retornar',
           loadingLabel: 'Voltando...',
           status: pendingTaskStatus,
         },
@@ -1757,7 +1755,7 @@ function canMoveTaskToStatus(currentStatus: TaskStatus, nextStatus: TaskStatus) 
 function getStatusActionErrorMessage(action: StatusTaskAction) {
   const messages: Record<StatusTaskAction, string> = {
     start: 'Não foi possível iniciar a tarefa.',
-    pause: 'Não foi possível voltar a tarefa para pendente.',
+    pause: 'Não foi possível retornar a tarefa.',
     complete: 'Não foi possível concluir a tarefa.',
     cancel: 'Não foi possível cancelar a tarefa.',
     reopen: 'Não foi possível reabrir a tarefa.',

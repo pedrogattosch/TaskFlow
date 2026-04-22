@@ -729,21 +729,34 @@ button:disabled {
 
 .categories-panel__color-field {
   display: inline-flex;
-  gap: 6px;
   align-items: center;
   margin-left: 4px;
-  color: var(--color-muted);
-  font-size: 0.78rem;
 }
 
 .categories-panel__color-field input {
-  width: 28px;
-  height: 28px;
-  padding: 2px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius);
-  background: var(--color-surface);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.categories-panel__color-field input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.categories-panel__color-field input::-webkit-color-swatch {
+  border: 0;
+  border-radius: 999px;
+}
+
+.categories-panel__color-field input::-moz-color-swatch {
+  border: 0;
+  border-radius: 999px;
 }
 
 .task-summary-panel,
@@ -1014,6 +1027,11 @@ button:disabled {
 .tasks-page__list--blocks .task-card__status-actions,
 .tasks-page__list--blocks .task-card__management-actions {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tasks-page__list--blocks .task-card__management-actions {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -1082,7 +1100,7 @@ button:disabled {
 .tasks-page__kanban .task-card__status-actions,
 .tasks-page__kanban .task-card__management-actions {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -1381,29 +1399,39 @@ button:disabled {
 }
 
 .task-form__color-picker {
-  min-height: 48px;
   display: inline-flex;
-  gap: 8px;
   align-items: center;
   justify-content: center;
-  padding: 0 12px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius);
-  color: var(--color-label);
-  background: var(--color-surface);
-  font-size: 0.9rem;
-  font-weight: 760;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .task-form__color-picker input {
-  width: 30px;
-  height: 30px;
-  min-height: 30px;
-  padding: 2px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius);
-  background: var(--color-surface);
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.task-form__color-picker input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.task-form__color-picker input::-webkit-color-swatch {
+  border: 0;
+  border-radius: 999px;
+}
+
+.task-form__color-picker input::-moz-color-swatch {
+  border: 0;
+  border-radius: 999px;
 }
 
 @media (max-width: 900px) {
@@ -1529,6 +1557,18 @@ button:disabled {
   .tasks-page__list--blocks .task-card__management-actions {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .tasks-page__list--blocks .task-card__status-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tasks-page__list--blocks .task-card__management-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tasks-page__kanban .task-card__status-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .tasks-page__kanban .task-card__management-actions {
