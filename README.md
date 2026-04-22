@@ -1,34 +1,46 @@
 # TaskFlow
 
-TaskFlow é uma aplicação web para gerenciamento de tarefas, construída com ASP.NET Core, React, TypeScript e SQL Server. O projeto segue uma organização em camadas inspirada em Clean Architecture e em princípios de Domain-Driven Design (DDD), com domínio, casos de uso, infraestrutura, API, front-end e testes separados por responsabilidade.
+TaskFlow é uma aplicação web de gerenciamento de tarefas com back-end em ASP.NET Core, front-end em React e persistência em SQL Server. O projeto está organizado em camadas, com separação entre domínio, casos de uso, infraestrutura, API, interface web e testes.
 
-O projeto já possui:
+## Stacks
 
-- cadastro e login de usuários;
-- geração e validação de token JWT;
-- hash de senha com PBKDF2;
-- criação e listagem de categorias por usuário;
-- criação, listagem, alteração de status e exclusão lógica de tarefas;
-- filtros de tarefas por status, prioridade e categoria;
-- ordenação de tarefas por prazo ou prioridade;
-- resumo de tarefas por status;
-- front-end com autenticação, rotas protegidas, gerenciamento de tarefas e categorias, filtros, ordenação, estados de carregamento e mensagens de erro;
-- persistência com Entity Framework Core e SQL Server;
-- migração inicial do banco;
-- testes unitários e testes de integração da API.
-
-## Stack
-
-- Back-end: .NET, ASP.NET Core e Swagger
-- Front-end: React e TypeScript
-- Banco de dados: SQL Server e Entity Framework Core
-- Testes: xUnit
+- Back-end: .NET 10, ASP.NET Core e Swagger
+- Front-end: React 19, TypeScript e Vite
+- Banco de dados: SQL Server com Entity Framework Core
 - Autenticação: JWT
+- Servidor do front-end: Nginx
+- Infraestrutura e publicação: Docker e Docker Compose
+- Testes: xUnit
 
-## Estrutura do projeto
+## Funcionalidades
+
+- cadastro de usuário;
+- login com geração de token JWT;
+- hash de senha com PBKDF2;
+- criação e listagem de categorias por usuário autenticado;
+- atualização de categoria;
+- criação de tarefas;
+- listagem de tarefas com filtros e ordenação;
+- resumo de tarefas por status;
+- atualização completa de tarefa;
+- atualização de status da tarefa;
+- exclusão lógica de tarefa;
+- interface web com autenticação, rotas protegidas, dashboard e fluxo de tarefas;
+- health check em `/health`;
+- Swagger disponível em ambiente de desenvolvimento.
+
+## Estrutura de pastas
 
 ```text
 TaskFlow/
+├─ deploy/
+│  ├─ docker/
+│  │  ├─ migrate.sh
+│  │  └─ run-tests.sh
+│  ├─ .env.example
+│  ├─ .env.production.example
+│  ├─ docker-compose.yml
+│  └─ docker-compose.production.yml
 ├─ docs/
 │  ├─ architecture.md
 │  ├─ backlog.md
@@ -40,57 +52,27 @@ TaskFlow/
 │  │  ├─ Properties/
 │  │  ├─ appsettings.json
 │  │  ├─ appsettings.Development.json
+│  │  ├─ appsettings.Production.json
+│  │  ├─ Dockerfile
 │  │  └─ Program.cs
 │  ├─ TaskFlow.Application/
-│  │  ├─ DTOs/
-│  │  ├─ DependencyInjection/
-│  │  ├─ Exceptions/
-│  │  ├─ Interfaces/
-│  │  └─ UseCases/
 │  ├─ TaskFlow.Domain/
-│  │  ├─ Entities/
-│  │  ├─ Enums/
-│  │  ├─ Exceptions/
-│  │  ├─ Interfaces/
-│  │  └─ ValueObjects/
 │  └─ TaskFlow.Infrastructure/
-│     ├─ DependencyInjection/
-│     ├─ Identity/
 │     └─ Persistence/
-│        ├─ Configurations/
-│        ├─ Context/
-│        ├─ Migrations/
-│        └─ Repositories/
+│        └─ Migrations/
 ├─ tests/
 │  ├─ TaskFlow.IntegrationTests/
 │  └─ TaskFlow.UnitTests/
 └─ web/
    └─ taskflow-web/
       ├─ src/
-      │  ├─ components/
-      │  ├─ contexts/
-      │  ├─ pages/
-      │  ├─ routes/
-      │  ├─ services/
-      │  ├─ styles/
-      │  └─ types/
-      ├─ index.html
+      ├─ Dockerfile
+      ├─ nginx.conf
       ├─ package.json
       └─ vite.config.ts
 ```
 
-## Arquitetura
-
-O back-end está dividido em camadas:
-
-- `TaskFlow.Domain`: entidades, enums, regras de negócio, exceções de domínio e contratos de repositório.
-- `TaskFlow.Application`: DTOs, casos de uso, validações de entrada, mapeamentos de resposta e contratos de autenticação/persistência.
-- `TaskFlow.Infrastructure`: `AppDbContext`, configurações do EF Core, migrations, repositórios, hash de senha, geração e validação de JWT.
-- `TaskFlow.API`: controllers HTTP, Swagger, configuração da aplicação e composição das dependências.
-
-O front-end fica em `web/taskflow-web` e consome a API por HTTP. Em desenvolvimento, o Vite usa proxy de `/api` para `http://localhost:5181`.
-
-## Endpoints da API
+## Endpoints
 
 Autenticação:
 
@@ -101,6 +83,7 @@ Categorias:
 
 - `GET /api/categories`
 - `POST /api/categories`
+- `PUT /api/categories/{id}`
 
 Tarefas:
 
@@ -111,100 +94,194 @@ Tarefas:
 - `PATCH /api/tasks/{id}/status`
 - `DELETE /api/tasks/{id}`
 
-A listagem de tarefas aceita filtros e ordenação por query string:
+Infraestrutura:
 
-- `status`: `1` pendente, `2` em andamento, `3` concluída, `4` cancelada
-- `priority`: `1` baixa, `2` média, `3` alta
+- `GET /health`
+
+Filtros e ordenação em `GET /api/tasks`:
+
+- `status`: `1` pendente, `2` em andamento, `3` concluída ou `4` cancelada
+- `priority`: `1` baixa, `2` média ou `3` alta
 - `categoryId`: identificador da categoria
 - `sortBy`: `dueDate` ou `priority`
 - `sortDirection`: `asc` ou `desc`
 
-## Execução
+## Execução local sem Docker
 
-### 1. Restaurar o back-end
+### 1. Restaurar dependências do back-end
 
 Na raiz do repositório:
 
-```bash
+```powershell
 dotnet restore src/TaskFlow.slnx
 ```
 
 ### 2. Configurar a chave JWT
 
-```bash
-cd src/TaskFlow.API
-dotnet user-secrets set "Jwt:SecretKey" "uma-chave-local-com-mais-de-32-caracteres"
-cd ../..
+```powershell
+dotnet user-secrets set "Jwt:SecretKey" "uma-chave-local-com-mais-de-32-caracteres" --project src/TaskFlow.API
 ```
 
-### 3. Criar ou atualizar o banco
+### 3. Ajustar a connection string
 
-```bash
+Por padrão, o arquivo `src/TaskFlow.API/appsettings.json` usa LocalDB:
+
+```text
+Server=(localdb)\MSSQLLocalDB;Database=TaskFlowDb;Trusted_Connection=True;TrustServerCertificate=True
+```
+
+Se necessário, sobrescreva com variável de ambiente:
+
+```powershell
+$env:ConnectionStrings__DefaultConnection="Server=localhost,1433;Database=TaskFlowDb;User ID=sa;Password=SuaSenhaAqui;Encrypt=False;TrustServerCertificate=True;"
+```
+
+### 4. Aplicar as migrations
+
+```powershell
 dotnet ef database update --project src/TaskFlow.Infrastructure --startup-project src/TaskFlow.API
 ```
 
-### 4. Subir a API
+### 5. Subir a API
 
-```bash
+```powershell
 dotnet run --project src/TaskFlow.API --launch-profile http
 ```
 
-A API sobe em:
+A API ficará disponível em:
 
 - `http://localhost:5181`
-- Swagger em `http://localhost:5181/swagger`
+- Swagger: `http://localhost:5181/swagger`
+- Health: `http://localhost:5181/health`
 
-### 5. Instalar dependências do front-end
+### 6. Instalar dependências do front-end
 
 Em outro terminal:
 
-```bash
-cd web/taskflow-web
+```powershell
+Set-Location web/taskflow-web
 npm install
 ```
 
-### 6. Subir o front-end
+### 7. Subir o front-end
 
-```bash
+```powershell
 npm run dev
 ```
 
-O front-end sobe em:
+O front-end ficará disponível em:
 
 - `http://localhost:5173`
 
-Com a configuração atual, chamadas para `/api` são encaminhadas pelo proxy do Vite para `http://localhost:5181`.
-Como a API ainda não configura CORS, mantenha esse proxy para execução local do front-end em desenvolvimento.
+No modo local sem Docker, o Vite encaminha `/api` para `http://localhost:5181`.
 
-## Testes automatizados
+## Execução local com Docker
 
-Os testes ficam em `tests`.
+### 1. Criar e configurar `deploy/.env`
 
-`TaskFlow.UnitTests` cobre comportamentos de domínio e casos de uso, incluindo:
+Na raiz do repositório:
 
-- validações e transições de status de tarefas;
-- criação, listagem e validações de tarefas;
-- criação e listagem de categorias;
-- cadastro e login.
+```powershell
+Copy-Item deploy/.env.example deploy/.env
+```
 
-`TaskFlow.IntegrationTests` cobre fluxos HTTP da API, incluindo:
+O arquivo `deploy/.env.example` já traz uma configuração local pronta. A senha de `MSSQL_SA_PASSWORD` precisa atender às regras de complexidade do SQL Server.
 
-- cadastro, login e rejeição de e-mail duplicado;
-- proteção de endpoints sem token;
-- criação e listagem de categorias autenticadas;
-- criação, filtro, resumo, transição de status e exclusão lógica de tarefas;
-- rejeição da transição inválida de cancelada para em andamento.
+### 2. Validar a configuração
 
-Para executar os testes:
+```powershell
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml config
+```
 
-```bash
-dotnet test src/TaskFlow.slnx
+### 3. Fazer o build das imagens
+
+```powershell
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml build
+```
+
+### 4. Subir a stack local
+
+```powershell
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml up --build
+```
+
+Com a stack em execução é possível acessar a aplicação:
+
+- http://localhost:8088
+
+### 5. Encerrar a stack local
+
+```powershell
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml down
+```
+
+Encerrar e remover o volume do banco local:
+
+```powershell
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml down -v
+```
+
+## Publicação com Docker
+
+### 1. Criar e configurar `deploy/.env.production`
+
+Na raiz do repositório:
+
+```powershell
+Copy-Item deploy/.env.production.example deploy/.env.production
+```
+
+O arquivo `deploy/.env.production` deve apontar para um SQL Server já existente.
+
+### 2. Validar a configuração
+
+```powershell
+docker compose --env-file deploy/.env.production -f deploy/docker-compose.production.yml config
+```
+
+### 3. Fazer o build das imagens
+
+```powershell
+docker compose --env-file deploy/.env.production -f deploy/docker-compose.production.yml build
+```
+
+### 4. Subir o ambiente de produção
+
+```powershell
+docker compose --env-file deploy/.env.production -f deploy/docker-compose.production.yml up -d
+```
+
+Com o ambiente em execução é possível acessar a aplicação:
+
+- `http://localhost` ou a porta definida em `WEB_PORT`
+
+### 5. Encerrar o ambiente de produção
+
+```powershell
+docker compose --env-file deploy/.env.production -f deploy/docker-compose.production.yml down
+```
+
+## Testes
+
+### Testes com `dotnet test`
+
+Na raiz do repositório:
+
+```powershell
+dotnet test tests/TaskFlow.UnitTests/TaskFlow.UnitTests.csproj
+dotnet test tests/TaskFlow.IntegrationTests/TaskFlow.IntegrationTests.csproj
+```
+
+Os testes de integração usam SQLite em memória por meio de `CustomWebApplicationFactory`, então não dependem do SQL Server local para execução.
+
+### Testes via Docker
+
+```powershell
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml --profile test run --rm tests
 ```
 
 ## Documentação
 
-- `docs/vision.md`: visão do produto.
-- `docs/architecture.md`: arquitetura, requisitos e regras de negócio planejadas.
-- `docs/backlog.md`: backlog por etapas e itens futuros.
-
-O README.md descreve o estado implementado no código atual. Itens futuros do backlog, como tema claro/escuro, etiquetas múltiplas, subtarefas, comentários, notificações e compartilhamento, ainda não fazem parte da aplicação.
+- `docs/vision.md`: visão do produto
+- `docs/architecture.md`: arquitetura e regras planejadas
+- `docs/backlog.md`: backlog e próximos incrementos

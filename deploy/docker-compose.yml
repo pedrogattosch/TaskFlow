@@ -1,0 +1,93 @@
+name: taskflow-local
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: Y
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+    ports:
+      - "${DB_PORT:-1433}:1433"
+    volumes:
+      - taskflow-sql-data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -Q \"SELECT 1\" || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  migrator:
+    build:
+      context: ..
+      dockerfile: src/TaskFlow.API/Dockerfile
+      target: migrator
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Server=db,1433;Database=${MSSQL_DB_NAME:-TaskFlowDb};User ID=sa;Password=${MSSQL_SA_PASSWORD};Encrypt=False;TrustServerCertificate=True;
+      Jwt__Issuer: ${JWT__ISSUER}
+      Jwt__Audience: ${JWT__AUDIENCE}
+      Jwt__SecretKey: ${JWT__SECRETKEY}
+      Jwt__ExpirationMinutes: ${JWT__EXPIRATIONMINUTES:-60}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: ..
+      dockerfile: src/TaskFlow.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Server=db,1433;Database=${MSSQL_DB_NAME:-TaskFlowDb};User ID=sa;Password=${MSSQL_SA_PASSWORD};Encrypt=False;TrustServerCertificate=True;
+      Jwt__Issuer: ${JWT__ISSUER}
+      Jwt__Audience: ${JWT__AUDIENCE}
+      Jwt__SecretKey: ${JWT__SECRETKEY}
+      Jwt__ExpirationMinutes: ${JWT__EXPIRATIONMINUTES:-60}
+      Cors__AllowedOrigins__0: ${CORS__ALLOWEDORIGIN}
+      Http__UseHttpsRedirection: "false"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    ports:
+      - "${API_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ..
+      dockerfile: web/taskflow-web/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "${WEB_PORT:-8088}:80"
+    restart: unless-stopped
+
+  tests:
+    build:
+      context: ..
+      dockerfile: src/TaskFlow.API/Dockerfile
+      target: test-runner
+    profiles:
+      - test
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Jwt__Issuer: ${JWT__ISSUER}
+      Jwt__Audience: ${JWT__AUDIENCE}
+      Jwt__SecretKey: ${JWT__SECRETKEY}
+      Jwt__ExpirationMinutes: ${JWT__EXPIRATIONMINUTES:-60}
+    restart: "no"
+
+volumes:
+  taskflow-sql-data:
