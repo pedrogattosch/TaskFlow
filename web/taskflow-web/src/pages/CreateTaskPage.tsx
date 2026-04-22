@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { BrandMark } from '../components/BrandMark';
 import { useAuth } from '../contexts/AuthContext';
 import { categoryService } from '../services/categoryService';
 import { HttpClientError } from '../services/httpClient';
@@ -182,7 +183,7 @@ export function CreateTaskPage() {
       <section className="task-form-page" aria-labelledby="create-task-title">
         <header className="task-form-page__header">
           <div>
-            <p className="tasks-page__eyebrow">TaskFlow</p>
+            <BrandMark size="compact" />
             <h1 id="create-task-title">Criar tarefa</h1>
             <p className="tasks-page__description">
               Registre uma tarefa com prioridade, prazo e categoria.

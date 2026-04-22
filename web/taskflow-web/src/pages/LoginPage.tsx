@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { BrandMark } from '../components/BrandMark';
 import { LoginForm } from '../components/LoginForm';
 import { useAuth } from '../contexts/AuthContext';
 import { HttpClientError } from '../services/httpClient';
@@ -38,7 +39,9 @@ export function LoginPage() {
     <main className="login-page">
       <section className="login-page__content" aria-labelledby="login-title">
         <div className="login-page__intro">
-          <p className="login-page__eyebrow">TaskFlow</p>
+          <BrandMark
+            tagline="Centralize prioridades, acompanhe prazos e mantenha o trabalho fluindo."
+          />
           <h1 id="login-title">Entre na sua conta</h1>
           <p className="login-page__description">
             Acesse seu espaço para organizar as tarefas, acompanhar os prazos e manter o trabalho em

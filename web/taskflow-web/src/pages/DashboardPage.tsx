@@ -1,3 +1,4 @@
+import { BrandMark } from '../components/BrandMark';
 import { useAuth } from '../contexts/AuthContext';
 
 export function DashboardPage() {
@@ -7,7 +8,7 @@ export function DashboardPage() {
     <main className="dashboard-page">
       <section className="dashboard-page__panel" aria-labelledby="dashboard-title">
         <div>
-          <p className="dashboard-page__eyebrow">TaskFlow</p>
+          <BrandMark size="compact" />
           <h1 id="dashboard-title">Olá, {session?.name}</h1>
           <p className="dashboard-page__description">
             Este é o espaço inicial da sua sessão. O gerenciamento de tarefas entra no próximo

@@ -199,6 +199,36 @@ button:disabled {
   background: var(--color-surface);
 }
 
+.brand-mark {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.brand-mark--compact {
+  gap: 0;
+}
+
+.brand-mark__logo {
+  display: block;
+  width: clamp(172px, 30vw, 232px);
+  max-width: 100%;
+  height: auto;
+}
+
+.brand-mark--compact .brand-mark__logo {
+  width: clamp(148px, 22vw, 196px);
+}
+
+.brand-mark__tagline {
+  margin: 0;
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
 .login-page {
   min-height: 100vh;
   display: grid;
@@ -216,6 +246,8 @@ button:disabled {
 }
 
 .login-page__intro {
+  display: grid;
+  gap: 18px;
   max-width: 560px;
 }
 
@@ -253,12 +285,12 @@ button:disabled {
 
 .login-page__description {
   max-width: 58ch;
-  margin: 22px 0 0;
+  margin: 0;
   font-size: 1.08rem;
 }
 
 .login-page__secondary-action {
-  margin: 30px 0 0;
+  margin: 6px 0 0;
   color: var(--color-muted);
   font-size: 1rem;
   line-height: 1.6;
@@ -517,6 +549,8 @@ button:disabled {
 }
 
 .tasks-page__intro {
+  display: grid;
+  gap: 14px;
   max-width: 720px;
 }
 
@@ -526,7 +560,7 @@ button:disabled {
 
 .tasks-page__description {
   max-width: 64ch;
-  margin: 14px 0 0;
+  margin: 0;
   font-size: 1.04rem;
 }
 
@@ -560,7 +594,7 @@ button:disabled {
 
 .tasks-page__primary-action {
   gap: 8px;
-  margin-top: 20px;
+  margin-top: 6px;
 }
 
 .tasks-page__state,
@@ -1113,6 +1147,11 @@ button:disabled {
   align-items: flex-start;
   justify-content: space-between;
   padding: clamp(24px, 4vw, 34px);
+}
+
+.task-form-page__header > div {
+  display: grid;
+  gap: 14px;
 }
 
 .task-form-page__back {

@@ -1,5 +1,6 @@
 import { type CSSProperties, type FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { BrandMark } from '../components/BrandMark';
 import { useAuth } from '../contexts/AuthContext';
 import { categoryService } from '../services/categoryService';
 import { HttpClientError } from '../services/httpClient';
@@ -579,7 +580,7 @@ export function TasksPage() {
           </div>
 
           <div className="tasks-page__intro">
-            <p className="tasks-page__eyebrow">TaskFlow</p>
+            <BrandMark size="compact" />
             <h1 id="tasks-title">Minhas tarefas</h1>
             <p className="tasks-page__description">
               Acompanhe suas tarefas e mantenha foco no que precisa avançar.
