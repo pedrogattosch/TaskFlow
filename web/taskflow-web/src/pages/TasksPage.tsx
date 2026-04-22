@@ -1,4 +1,4 @@
-import { type CSSProperties, type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type CSSProperties, type DragEvent, type FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { BrandMark } from '../components/BrandMark';
 import { useAuth } from '../contexts/AuthContext';
@@ -107,7 +107,12 @@ type TaskListFilters = {
   sortDirection: TaskSortDirection;
 };
 
-type TaskViewMode = 'list' | 'blocks';
+type TaskViewMode = 'list' | 'blocks' | 'kanban';
+
+type DraggingTaskState = {
+  taskId: string;
+  fromStatus: TaskStatus;
+} | null;
 
 export function TasksPage() {
   const { logout, session } = useAuth();
@@ -141,6 +146,8 @@ export function TasksPage() {
   const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(null);
   const [categoryActionErrorMessage, setCategoryActionErrorMessage] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<TaskViewMode>('list');
+  const [draggingTask, setDraggingTask] = useState<DraggingTaskState>(null);
+  const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -293,8 +300,24 @@ export function TasksPage() {
     }
 
     try {
+      const currentTask = tasks.find((task) => task.id === taskId);
+
+      if (!currentTask) {
+        return;
+      }
+
       setPendingTaskAction({ taskId, action });
       setActionErrorMessage(null);
+      setTasks((currentTasks) =>
+        replaceTaskForFilters(
+          currentTasks,
+          createOptimisticTaskStatusUpdate(currentTask, status),
+          filters,
+        ),
+      );
+      setTaskSummary((currentSummary) =>
+        updateTaskSummaryForStatusChange(currentSummary, currentTask.status, status),
+      );
 
       const updatedTask = await taskService.updateTaskStatus(
         session.accessToken,
@@ -310,6 +333,15 @@ export function TasksPage() {
         return;
       }
 
+      const currentTask = tasks.find((task) => task.id === taskId);
+
+      if (currentTask) {
+        setTasks((currentTasks) => replaceTaskForFilters(currentTasks, currentTask, filters));
+        setTaskSummary((currentSummary) =>
+          updateTaskSummaryForStatusChange(currentSummary, status, currentTask.status),
+        );
+      }
+
       setActionErrorMessage(
         error instanceof Error ? error.message : getStatusActionErrorMessage(action),
       );
@@ -317,7 +349,6 @@ export function TasksPage() {
       setPendingTaskAction(null);
     }
   }
-
   async function handleDeleteTask(taskId: string) {
     if (!session?.accessToken || pendingTaskAction) {
       return;
@@ -539,6 +570,54 @@ export function TasksPage() {
     });
   }
 
+  function handleTaskDragStart(task: TaskListItem) {
+    if (pendingTaskAction || editingTaskId === task.id) {
+      return;
+    }
+
+    setDraggingTask({ taskId: task.id, fromStatus: task.status });
+    setDragOverStatus(null);
+    setActionErrorMessage(null);
+  }
+
+  function handleTaskDragEnd() {
+    setDraggingTask(null);
+    setDragOverStatus(null);
+  }
+
+  function handleKanbanColumnDragOver(event: DragEvent<HTMLElement>, status: TaskStatus) {
+    if (!draggingTask) {
+      return;
+    }
+
+    event.preventDefault();
+    setDragOverStatus(status);
+  }
+
+  function handleKanbanColumnDrop(event: DragEvent<HTMLElement>, status: TaskStatus) {
+    event.preventDefault();
+
+    if (!draggingTask) {
+      return;
+    }
+
+    const task = tasks.find((currentTask) => currentTask.id === draggingTask.taskId);
+    setDragOverStatus(null);
+    setDraggingTask(null);
+
+    if (!task || task.status === status) {
+      return;
+    }
+
+    const action = getTaskStatusActionForTransition(task.status, status);
+
+    if (!action) {
+      setActionErrorMessage('Essa mudança de status não está disponível para a tarefa selecionada.');
+      return;
+    }
+
+    void handleChangeTaskStatus(task.id, status, action);
+  }
   function updateSearchParams(nextFilters: TaskListFilters) {
     const nextParams = new URLSearchParams();
 
@@ -627,10 +706,13 @@ export function TasksPage() {
           actionErrorMessage={actionErrorMessage}
           categories={categories}
           categoryErrorMessage={categoryErrorMessage}
+          dragOverStatus={dragOverStatus}
+          draggingTask={draggingTask}
           editErrors={editErrors}
           editingTaskId={editingTaskId}
           editValues={editValues}
           errorMessage={errorMessage}
+          filters={filters}
           hasActiveFilters={Boolean(filters.status || filters.priority || filters.categoryId)}
           isCreatingCategory={isCreatingCategory}
           isLoadingCategories={isLoadingCategories}
@@ -642,9 +724,13 @@ export function TasksPage() {
           onCreateCategory={handleCreateCategory}
           onChangeTaskStatus={handleChangeTaskStatus}
           onDeleteTask={handleDeleteTask}
+          onKanbanColumnDragOver={handleKanbanColumnDragOver}
+          onKanbanColumnDrop={handleKanbanColumnDrop}
           onNewCategoryColorChange={setNewCategoryColor}
           onNewCategoryNameChange={setNewCategoryName}
           onStartEdit={handleStartEdit}
+          onTaskDragEnd={handleTaskDragEnd}
+          onTaskDragStart={handleTaskDragStart}
           onUpdateTask={handleUpdateTask}
           pendingTaskAction={pendingTaskAction}
           tasks={tasks}
@@ -918,6 +1004,7 @@ function TaskViewSelector({ taskCount, viewMode, onChange }: TaskViewSelectorPro
     <section className="task-view-selector" aria-labelledby="task-view-title">
       <div>
         <h2 id="task-view-title">Visualização</h2>
+        <p>{taskCount} tarefa(s) carregada(s)</p>
       </div>
 
       <div className="task-view-selector__controls" aria-label="Modo de visualização">
@@ -940,6 +1027,16 @@ function TaskViewSelector({ taskCount, viewMode, onChange }: TaskViewSelectorPro
           <Icon name="grid" />
           Blocos
         </button>
+
+        <button
+          className={viewMode === 'kanban' ? 'task-view-selector__button task-view-selector__button--active' : 'task-view-selector__button'}
+          type="button"
+          onClick={() => onChange('kanban')}
+          aria-pressed={viewMode === 'kanban'}
+        >
+          <Icon name="kanban" />
+          Kanban
+        </button>
       </div>
     </section>
   );
@@ -949,10 +1046,13 @@ type TaskListContentProps = {
   actionErrorMessage: string | null;
   categories: CategoryListItem[];
   categoryErrorMessage: string | null;
+  dragOverStatus: TaskStatus | null;
+  draggingTask: DraggingTaskState;
   editErrors: TaskEditErrors;
   editingTaskId: string | null;
   editValues: TaskEditValues | null;
   errorMessage: string | null;
+  filters: TaskListFilters;
   hasActiveFilters: boolean;
   isCreatingCategory: boolean;
   isLoadingCategories: boolean;
@@ -968,9 +1068,13 @@ type TaskListContentProps = {
     action: StatusTaskAction,
   ) => void;
   onDeleteTask: (taskId: string) => void;
+  onKanbanColumnDragOver: (event: DragEvent<HTMLElement>, status: TaskStatus) => void;
+  onKanbanColumnDrop: (event: DragEvent<HTMLElement>, status: TaskStatus) => void;
   onNewCategoryColorChange: (color: string) => void;
   onNewCategoryNameChange: (name: string) => void;
   onStartEdit: (task: TaskListItem) => void;
+  onTaskDragEnd: () => void;
+  onTaskDragStart: (task: TaskListItem) => void;
   onUpdateTask: (event: FormEvent<HTMLFormElement>, taskId: string) => void;
   pendingTaskAction: PendingTaskAction;
   tasks: TaskListItem[];
@@ -981,10 +1085,13 @@ function TaskListContent({
   actionErrorMessage,
   categories,
   categoryErrorMessage,
+  dragOverStatus,
+  draggingTask,
   editErrors,
   editingTaskId,
   editValues,
   errorMessage,
+  filters,
   hasActiveFilters,
   isCreatingCategory,
   isLoadingCategories,
@@ -996,9 +1103,13 @@ function TaskListContent({
   onCreateCategory,
   onChangeTaskStatus,
   onDeleteTask,
+  onKanbanColumnDragOver,
+  onKanbanColumnDrop,
   onNewCategoryColorChange,
   onNewCategoryNameChange,
   onStartEdit,
+  onTaskDragEnd,
+  onTaskDragStart,
   onUpdateTask,
   pendingTaskAction,
   tasks,
@@ -1008,6 +1119,167 @@ function TaskListContent({
     () => new Map(categories.map((category) => [category.id, category])),
     [categories],
   );
+  const kanbanColumns = useMemo(
+    () =>
+      statusOptions.map((option) => ({
+        ...option,
+        tasks: sortTasksForFilters(
+          tasks.filter((task) => task.status === option.value),
+          filters,
+        ),
+      })),
+    [filters, tasks],
+  );
+
+  function handleKanbanBoardDragOver(event: DragEvent<HTMLDivElement>) {
+    if (!draggingTask) {
+      return;
+    }
+
+    const board = event.currentTarget;
+    const bounds = board.getBoundingClientRect();
+    const scrollEdgeThreshold = 120;
+    const scrollStep = 28;
+
+    if (event.clientX >= bounds.right - scrollEdgeThreshold) {
+      board.scrollBy({ left: scrollStep, behavior: 'auto' });
+    } else if (event.clientX <= bounds.left + scrollEdgeThreshold) {
+      board.scrollBy({ left: -scrollStep, behavior: 'auto' });
+    }
+  }
+
+  function renderTaskCard(task: TaskListItem) {
+    const isEditing = task.id === editingTaskId && editValues;
+    const isUpdating = isTaskActionPending(pendingTaskAction, task.id, 'update');
+    const statusActions = getTaskStatusActions(task.status);
+    const category = task.categoryId ? categoriesById.get(task.categoryId) : null;
+    const isDragging = draggingTask?.taskId === task.id;
+
+    return (
+      <article
+        className={isEditing ? 'task-card task-card--editing' : 'task-card'}
+        key={task.id}
+        style={categoryColorStyle(category?.color)}
+        draggable={viewMode === 'kanban' && !isEditing && !pendingTaskAction}
+        onDragStart={() => onTaskDragStart(task)}
+        onDragEnd={onTaskDragEnd}
+        data-dragging={isDragging ? 'true' : undefined}
+      >
+        {isEditing ? (
+          <TaskEditForm
+            categories={categories}
+            categoryErrorMessage={categoryErrorMessage}
+            errors={editErrors}
+            isCreatingCategory={isCreatingCategory}
+            isLoadingCategories={isLoadingCategories}
+            isLoading={isUpdating}
+            newCategoryColor={newCategoryColor}
+            newCategoryName={newCategoryName}
+            onCancel={onCancelEdit}
+            onChange={onChangeEditValue}
+            onCreateCategory={onCreateCategory}
+            onNewCategoryColorChange={onNewCategoryColorChange}
+            onNewCategoryNameChange={onNewCategoryNameChange}
+            onSubmit={(event) => onUpdateTask(event, task.id)}
+            taskId={task.id}
+            taskTitle={task.title}
+            values={editValues}
+          />
+        ) : (
+          <>
+            <div className="task-card__main">
+              <div>
+                <h2>{task.title}</h2>
+                {task.description && <p>{task.description}</p>}
+              </div>
+
+              <span className={`task-card__status ${getStatusClassName(task.status)}`}>
+                {statusLabels[task.status]}
+              </span>
+            </div>
+
+            <dl className="task-card__meta">
+              <div>
+                <dt>Prioridade</dt>
+                <dd>
+                  <span className={`task-card__priority ${getPriorityClassName(task.priority)}`}>
+                    {priorityLabels[task.priority]}
+                  </span>
+                </dd>
+              </div>
+              <div>
+                <dt>Vencimento</dt>
+                <dd>{formatDate(task.dueDate)}</dd>
+              </div>
+              <div>
+                <dt>Categoria</dt>
+                <dd>
+                  <span className="task-card__category-chip">
+                    <span className="task-card__category-dot" aria-hidden="true" />
+                    {task.categoryName ?? 'Sem categoria'}
+                  </span>
+                </dd>
+              </div>
+            </dl>
+
+            <div className="task-card__actions" aria-label={`Ações da tarefa ${task.title}`}>
+              <div className="task-card__status-actions">
+                {statusActions.map((statusAction) => (
+                  <button
+                    className={
+                      statusAction.variant === 'danger'
+                        ? 'task-card__action task-card__action--danger'
+                        : 'task-card__action'
+                    }
+                    type="button"
+                    key={statusAction.action}
+                    onClick={() =>
+                      onChangeTaskStatus(task.id, statusAction.status, statusAction.action)
+                    }
+                    disabled={Boolean(pendingTaskAction)}
+                  >
+                    {isTaskActionPending(pendingTaskAction, task.id, statusAction.action)
+                      ? statusAction.loadingLabel
+                      : statusAction.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="task-card__management-actions">
+                <button
+                  className="task-card__icon-action"
+                  type="button"
+                  onClick={() => onStartEdit(task)}
+                  disabled={Boolean(pendingTaskAction)}
+                  aria-label={`Editar tarefa ${task.title}`}
+                  title="Editar tarefa"
+                >
+                  <Icon name="pencil" />
+                  <span>Editar</span>
+                </button>
+
+                <button
+                  className="task-card__icon-action task-card__icon-action--danger"
+                  type="button"
+                  onClick={() => onDeleteTask(task.id)}
+                  disabled={Boolean(pendingTaskAction)}
+                  aria-label={`Excluir tarefa ${task.title}`}
+                  title="Excluir tarefa"
+                >
+                  <Icon name="x" />
+                  <span>
+                    {isTaskActionPending(pendingTaskAction, task.id, 'delete')
+                      ? 'Excluindo...'
+                      : 'Excluir'}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </article>
+    );
+  }
 
   if (isLoading && tasks.length === 0) {
     return (
@@ -1056,146 +1328,71 @@ function TaskListContent({
         </div>
       )}
 
-      <div
-        className={
-          viewMode === 'blocks'
-            ? 'tasks-page__list tasks-page__list--blocks'
-            : 'tasks-page__list'
-        }
-        aria-label={viewMode === 'blocks' ? 'Tarefas em blocos' : 'Lista de tarefas'}
-      >
-        {tasks.map((task) => {
-          const isEditing = task.id === editingTaskId && editValues;
-          const isUpdating = isTaskActionPending(pendingTaskAction, task.id, 'update');
-          const statusActions = getTaskStatusActions(task.status);
-          const category = task.categoryId ? categoriesById.get(task.categoryId) : null;
+      {viewMode === 'kanban' ? (
+        <div
+          className="tasks-page__kanban"
+          aria-label="Kanban de tarefas"
+          onDragOver={handleKanbanBoardDragOver}
+        >
+          {kanbanColumns.map((column) => {
+            const isActiveDropTarget = dragOverStatus === column.value;
+            const isDroppable = Boolean(
+              draggingTask && canMoveTaskToStatus(draggingTask.fromStatus, column.value),
+            );
 
-          return (
-            <article
-              className={isEditing ? 'task-card task-card--editing' : 'task-card'}
-              key={task.id}
-              style={categoryColorStyle(category?.color)}
-            >
-              {isEditing ? (
-                <TaskEditForm
-                  categories={categories}
-                  categoryErrorMessage={categoryErrorMessage}
-                  errors={editErrors}
-                  isCreatingCategory={isCreatingCategory}
-                  isLoadingCategories={isLoadingCategories}
-                  isLoading={isUpdating}
-                  newCategoryColor={newCategoryColor}
-                  newCategoryName={newCategoryName}
-                  onCancel={onCancelEdit}
-                  onChange={onChangeEditValue}
-                  onCreateCategory={onCreateCategory}
-                  onNewCategoryColorChange={onNewCategoryColorChange}
-                  onNewCategoryNameChange={onNewCategoryNameChange}
-                  onSubmit={(event) => onUpdateTask(event, task.id)}
-                  taskId={task.id}
-                  taskTitle={task.title}
-                  values={editValues}
-                />
-              ) : (
-                <>
-                  <div className="task-card__main">
-                    <div>
-                      <h2>{task.title}</h2>
-                      {task.description && <p>{task.description}</p>}
-                    </div>
-
-                    <span className={`task-card__status ${getStatusClassName(task.status)}`}>
-                      {statusLabels[task.status]}
-                    </span>
+            return (
+              <section
+                className={
+                  isActiveDropTarget && isDroppable
+                    ? 'kanban-column kanban-column--drag-over'
+                    : isDroppable
+                      ? 'kanban-column kanban-column--droppable'
+                      : 'kanban-column'
+                }
+                key={column.value}
+                onDragOver={(event) => onKanbanColumnDragOver(event, column.value)}
+                onDrop={(event) => onKanbanColumnDrop(event, column.value)}
+              >
+                <header className="kanban-column__header">
+                  <div>
+                    <h3>{column.label}</h3>
+                    <p>{column.tasks.length} tarefa(s)</p>
                   </div>
+                  <span className={`task-card__status ${getStatusClassName(column.value)}`}>
+                    {column.tasks.length}
+                  </span>
+                </header>
 
-                  <dl className="task-card__meta">
-                    <div>
-                      <dt>Prioridade</dt>
-                      <dd>
-                        <span className={`task-card__priority ${getPriorityClassName(task.priority)}`}>
-                          {priorityLabels[task.priority]}
-                        </span>
-                      </dd>
+                <div className="kanban-column__body">
+                  {column.tasks.length === 0 ? (
+                    <div className="kanban-column__empty">
+                      {draggingTask && isDroppable
+                        ? 'Solte aqui para atualizar o status.'
+                        : 'Nenhuma tarefa nesta coluna.'}
                     </div>
-                    <div>
-                      <dt>Vencimento</dt>
-                      <dd>{formatDate(task.dueDate)}</dd>
-                    </div>
-                    <div>
-                      <dt>Categoria</dt>
-                      <dd>
-                        <span className="task-card__category-chip">
-                          <span className="task-card__category-dot" aria-hidden="true" />
-                          {task.categoryName ?? 'Sem categoria'}
-                        </span>
-                      </dd>
-                    </div>
-                  </dl>
-
-                  <div className="task-card__actions" aria-label={`Ações da tarefa ${task.title}`}>
-                    <div className="task-card__status-actions">
-                      {statusActions.map((statusAction) => (
-                        <button
-                          className={
-                            statusAction.variant === 'danger'
-                              ? 'task-card__action task-card__action--danger'
-                              : 'task-card__action'
-                          }
-                          type="button"
-                          key={statusAction.action}
-                          onClick={() =>
-                            onChangeTaskStatus(task.id, statusAction.status, statusAction.action)
-                          }
-                          disabled={Boolean(pendingTaskAction)}
-                        >
-                          {isTaskActionPending(pendingTaskAction, task.id, statusAction.action)
-                            ? statusAction.loadingLabel
-                            : statusAction.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="task-card__management-actions">
-                      <button
-                        className="task-card__icon-action"
-                        type="button"
-                        onClick={() => onStartEdit(task)}
-                        disabled={Boolean(pendingTaskAction)}
-                        aria-label={`Editar tarefa ${task.title}`}
-                        title="Editar tarefa"
-                      >
-                        <Icon name="pencil" />
-                        <span>Editar</span>
-                      </button>
-
-                      <button
-                        className="task-card__icon-action task-card__icon-action--danger"
-                        type="button"
-                        onClick={() => onDeleteTask(task.id)}
-                        disabled={Boolean(pendingTaskAction)}
-                        aria-label={`Excluir tarefa ${task.title}`}
-                        title="Excluir tarefa"
-                      >
-                        <Icon name="x" />
-                        <span>
-                          {isTaskActionPending(pendingTaskAction, task.id, 'delete')
-                            ? 'Excluindo...'
-                            : 'Excluir'}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </article>
-          );
-        })}
-      </div>
+                  ) : (
+                    column.tasks.map(renderTaskCard)
+                  )}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      ) : (
+        <div
+          className={
+            viewMode === 'blocks'
+              ? 'tasks-page__list tasks-page__list--blocks'
+              : 'tasks-page__list'
+          }
+          aria-label={viewMode === 'blocks' ? 'Tarefas em blocos' : 'Lista de tarefas'}
+        >
+          {tasks.map(renderTaskCard)}
+        </div>
+      )}
     </>
   );
 }
-
 type TaskEditFormProps = {
   categories: CategoryListItem[];
   categoryErrorMessage: string | null;
@@ -1406,7 +1603,7 @@ function TaskEditForm({
   );
 }
 
-type IconName = 'user' | 'plus' | 'pencil' | 'x' | 'list' | 'grid';
+type IconName = 'user' | 'plus' | 'pencil' | 'x' | 'list' | 'grid' | 'kanban';
 
 function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, string> = {
@@ -1416,6 +1613,7 @@ function Icon({ name }: { name: IconName }) {
     x: 'M6 6l12 12M18 6 6 18',
     list: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',
     grid: 'M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h6v6h-6v-6Z',
+    kanban: 'M4 5h5v14H4V5Zm11 0h5v8h-5V5ZM10 5h4v5h-4V5Zm0 7h4v7h-4v-7Zm5 3h5v4h-5v-4Z',
   };
 
   return (
@@ -1536,6 +1734,26 @@ function getTaskStatusActions(status: TaskStatus): TaskStatusActionConfig[] {
   }
 }
 
+function getTaskStatusActionForTransition(
+  currentStatus: TaskStatus,
+  nextStatus: TaskStatus,
+): StatusTaskAction | null {
+  if (currentStatus === nextStatus) {
+    return null;
+  }
+
+  const action = getTaskStatusActions(currentStatus).find(
+    (candidate) => candidate.status === nextStatus,
+  );
+
+  return action?.action ?? null;
+}
+
+function canMoveTaskToStatus(currentStatus: TaskStatus, nextStatus: TaskStatus) {
+  return currentStatus === nextStatus ||
+    Boolean(getTaskStatusActionForTransition(currentStatus, nextStatus));
+}
+
 function getStatusActionErrorMessage(action: StatusTaskAction) {
   const messages: Record<StatusTaskAction, string> = {
     start: 'Não foi possível iniciar a tarefa.',
@@ -1614,6 +1832,49 @@ function replaceTaskForFilters(
   }
 
   return sortTasksForFilters([...withoutTask, updatedTask], filters);
+}
+
+function createOptimisticTaskStatusUpdate(task: TaskListItem, status: TaskStatus): TaskListItem {
+  return {
+    ...task,
+    status,
+    completedAt: status === completedTaskStatus ? new Date().toISOString() : null,
+  };
+}
+
+function updateTaskSummaryForStatusChange(
+  summary: TaskSummary | null,
+  previousStatus: TaskStatus,
+  nextStatus: TaskStatus,
+) {
+  if (!summary || previousStatus === nextStatus) {
+    return summary;
+  }
+
+  return adjustTaskSummaryCount(
+    adjustTaskSummaryCount(summary, previousStatus, -1),
+    nextStatus,
+    1,
+  );
+}
+
+function adjustTaskSummaryCount(
+  summary: TaskSummary,
+  status: TaskStatus,
+  amount: number,
+): TaskSummary {
+  switch (status) {
+    case pendingTaskStatus:
+      return { ...summary, pending: Math.max(0, summary.pending + amount) };
+    case inProgressTaskStatus:
+      return { ...summary, inProgress: Math.max(0, summary.inProgress + amount) };
+    case completedTaskStatus:
+      return { ...summary, completed: Math.max(0, summary.completed + amount) };
+    case cancelledTaskStatus:
+      return { ...summary, cancelled: Math.max(0, summary.cancelled + amount) };
+    default:
+      return summary;
+  }
 }
 
 function sortTasksForFilters(tasks: TaskListItem[], filters: TaskListFilters) {
@@ -1771,3 +2032,4 @@ function isBeforeToday(value: string) {
   const selectedDate = new Date(`${value}T00:00:00`);
   return selectedDate < today;
 }
+
