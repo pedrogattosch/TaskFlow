@@ -190,6 +190,16 @@ export type TaskListContentProps = {
   viewMode: TaskViewMode;
 };
 
-export type IconName = 'user' | 'plus' | 'pencil' | 'x' | 'list' | 'grid' | 'kanban';
+export type IconName =
+  | 'user'
+  | 'plus'
+  | 'pencil'
+  | 'x'
+  | 'list'
+  | 'grid'
+  | 'kanban'
+  | 'logout'
+  | 'palette'
+  | 'sparkles';
 
 export type CategoryColorStyle = CSSProperties;

@@ -1,5 +1,8 @@
+import { Button } from '../../../components/Button';
 import type { TaskEditFormProps } from '../types';
 import { priorityOptions } from '../constants';
+import { CategoryColorInput } from './CategoryColorInput';
+import { TaskIcon } from './TaskIcon';
 
 export function TaskEditForm({
   categories,
@@ -158,33 +161,39 @@ export function TaskEditForm({
             disabled={isLoading || isCreatingCategory}
             aria-label="Nome da nova categoria"
           />
-          <label className="task-form__color-picker">
-            <input
-              type="color"
-              value={newCategoryColor}
-              onChange={(event) => onNewCategoryColorChange(event.target.value)}
-              disabled={isLoading || isCreatingCategory}
-              aria-label="Cor da nova categoria"
-            />
-          </label>
-          <button
+          <CategoryColorInput
+            className="task-form__color-picker"
+            value={newCategoryColor}
+            ariaLabel="Cor da nova categoria"
+            disabled={isLoading || isCreatingCategory}
+            onChange={onNewCategoryColorChange}
+          />
+          <Button
             className="task-card__action"
             type="button"
+            variant="secondary"
+            icon={<TaskIcon name="plus" />}
             onClick={onCreateCategory}
             disabled={isLoading || isCreatingCategory}
           >
             {isCreatingCategory ? 'Criando...' : 'Criar categoria'}
-          </button>
+          </Button>
         </div>
       </div>
 
       <div className="task-card__actions">
-        <button className="task-card__action" type="submit" disabled={isLoading}>
+        <Button className="task-card__action" type="submit" variant="primary" disabled={isLoading}>
           {isLoading ? 'Salvando...' : 'Salvar'}
-        </button>
-        <button className="task-card__action" type="button" onClick={onCancel} disabled={isLoading}>
+        </Button>
+        <Button
+          className="task-card__action"
+          type="button"
+          variant="secondary"
+          onClick={onCancel}
+          disabled={isLoading}
+        >
           Cancelar
-        </button>
+        </Button>
       </div>
     </form>
   );
