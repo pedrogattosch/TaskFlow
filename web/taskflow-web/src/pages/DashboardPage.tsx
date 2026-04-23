@@ -1,5 +1,7 @@
 import { BrandMark } from '../components/BrandMark';
+import { Button } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
+import { TaskIcon } from '../features/tasks/components/TaskIcon';
 
 export function DashboardPage() {
   const { logout, session } = useAuth();
@@ -21,9 +23,15 @@ export function DashboardPage() {
           <strong>{session?.email}</strong>
         </div>
 
-        <button className="dashboard-page__logout" type="button" onClick={logout}>
+        <Button
+          className="dashboard-page__logout"
+          type="button"
+          variant="destructive"
+          icon={<TaskIcon name="logout" />}
+          onClick={logout}
+        >
           Sair
-        </button>
+        </Button>
       </section>
     </main>
   );

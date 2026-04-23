@@ -1,3 +1,4 @@
+import { Button } from '../../../components/Button';
 import { priorityLabels, statusLabels } from '../constants';
 import type { TaskCardProps } from '../types';
 import {
@@ -112,7 +113,7 @@ export function TaskCard({
           <div className="task-card__actions" aria-label={`Ações da tarefa ${task.title}`}>
             <div className="task-card__status-actions">
               {statusActions.map((statusAction) => (
-                <button
+                <Button
                   className={
                     statusAction.variant === 'danger'
                       ? 'task-card__action task-card__action--danger'
@@ -120,6 +121,7 @@ export function TaskCard({
                   }
                   type="button"
                   key={statusAction.action}
+                  variant={statusAction.variant === 'danger' ? 'destructive' : 'secondary'}
                   onClick={() =>
                     onChangeTaskStatus(task.id, statusAction.status, statusAction.action)
                   }
@@ -128,38 +130,38 @@ export function TaskCard({
                   {isTaskActionPending(pendingTaskAction, task.id, statusAction.action)
                     ? statusAction.loadingLabel
                     : statusAction.label}
-                </button>
+                </Button>
               ))}
             </div>
 
             <div className="task-card__management-actions">
-              <button
+              <Button
                 className="task-card__icon-action"
                 type="button"
+                variant="secondary"
+                icon={<TaskIcon name="pencil" />}
                 onClick={() => onStartEdit(task)}
                 disabled={Boolean(pendingTaskAction)}
                 aria-label={`Editar tarefa ${task.title}`}
                 title="Editar tarefa"
               >
-                <TaskIcon name="pencil" />
-                <span>Editar</span>
-              </button>
+                Editar
+              </Button>
 
-              <button
+              <Button
                 className="task-card__icon-action task-card__icon-action--danger"
                 type="button"
+                variant="destructive"
+                icon={<TaskIcon name="x" />}
                 onClick={() => onDeleteTask(task.id)}
                 disabled={Boolean(pendingTaskAction)}
                 aria-label={`Excluir tarefa ${task.title}`}
                 title="Excluir tarefa"
               >
-                <TaskIcon name="x" />
-                <span>
-                  {isTaskActionPending(pendingTaskAction, task.id, 'delete')
-                    ? 'Excluindo...'
-                    : 'Excluir'}
-                </span>
-              </button>
+                {isTaskActionPending(pendingTaskAction, task.id, 'delete')
+                  ? 'Excluindo...'
+                  : 'Excluir'}
+              </Button>
             </div>
           </div>
         </>

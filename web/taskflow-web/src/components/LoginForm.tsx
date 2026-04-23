@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { Button } from './Button';
 import type { LoginCredentials } from '../types/auth';
 
 type LoginFormProps = {
@@ -83,9 +84,9 @@ export function LoginForm({ errorMessage, isLoading, onSubmit }: LoginFormProps)
         )}
       </div>
 
-      <button className="login-form__submit" type="submit" disabled={isLoading}>
+      <Button className="login-form__submit" type="submit" variant="primary" disabled={isLoading}>
         {isLoading ? 'Entrando...' : 'Entrar'}
-      </button>
+      </Button>
     </form>
   );
 }

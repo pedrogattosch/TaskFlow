@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
 import { BrandMark } from '../../../components/BrandMark';
+import { Button, ButtonLink } from '../../../components/Button';
 import { TaskIcon } from './TaskIcon';
 
 type TasksPageHeaderProps = {
@@ -18,9 +18,9 @@ export function TasksPageHeader({ email, onLogout }: TasksPageHeaderProps) {
             <strong>{email}</strong>
           </div>
         </div>
-        <button type="button" onClick={onLogout}>
+        <Button type="button" variant="destructive" icon={<TaskIcon name="logout" />} onClick={onLogout}>
           Sair
-        </button>
+        </Button>
       </div>
 
       <div className="tasks-page__intro">
@@ -29,10 +29,14 @@ export function TasksPageHeader({ email, onLogout }: TasksPageHeaderProps) {
         <p className="tasks-page__description">
           Acompanhe suas tarefas e mantenha foco no que precisa avançar.
         </p>
-        <Link className="tasks-page__primary-action" to="/tasks/new">
-          <TaskIcon name="plus" />
+        <ButtonLink
+          className="tasks-page__primary-action"
+          to="/tasks/new"
+          variant="primary"
+          icon={<TaskIcon name="plus" />}
+        >
           Criar tarefa
-        </Link>
+        </ButtonLink>
       </div>
     </header>
   );

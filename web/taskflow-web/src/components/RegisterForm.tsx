@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { Button } from './Button';
 import type { RegisterCredentials } from '../types/auth';
 
 type RegisterFormProps = {
@@ -130,9 +131,9 @@ export function RegisterForm({ errorMessage, isLoading, onSubmit }: RegisterForm
         )}
       </div>
 
-      <button className="login-form__submit" type="submit" disabled={isLoading}>
+      <Button className="login-form__submit" type="submit" variant="primary" disabled={isLoading}>
         {isLoading ? 'Criando conta...' : 'Criar conta'}
-      </button>
+      </Button>
     </form>
   );
 }

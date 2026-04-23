@@ -1,7 +1,9 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { BrandMark } from '../components/BrandMark';
+import { Button, ButtonLink } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
+import { CategoryColorInput } from '../features/tasks/components/CategoryColorInput';
 import { categoryService } from '../services/categoryService';
 import { HttpClientError } from '../services/httpClient';
 import { taskService } from '../services/taskService';
@@ -190,9 +192,13 @@ export function CreateTaskPage() {
             </p>
           </div>
 
-          <Link className="task-form-page__back" to="/tasks">
+          <ButtonLink
+            className="task-form-page__back"
+            to="/tasks"
+            variant="secondary"
+          >
             Voltar para tarefas
-          </Link>
+          </ButtonLink>
         </header>
 
         <form className="task-form" onSubmit={handleSubmit} noValidate>
@@ -318,9 +324,14 @@ export function CreateTaskPage() {
             disabled={isLoading}
           />
 
-          <button className="task-form__submit" type="submit" disabled={isFormDisabled}>
+          <Button
+            className="task-form__submit"
+            type="submit"
+            variant="primary"
+            disabled={isFormDisabled}
+          >
             {isLoading ? 'Criando tarefa...' : 'Criar tarefa'}
-          </button>
+          </Button>
         </form>
       </section>
     </main>
@@ -406,24 +417,22 @@ function CategorySelector({
           disabled={disabled || isCreatingCategory}
           aria-label="Nome da nova categoria"
         />
-        <label className="task-form__color-picker">
-          <span>Cor</span>
-          <input
-            type="color"
-            value={newCategoryColor}
-            onChange={(event) => onNewCategoryColorChange(event.target.value)}
-            disabled={disabled || isCreatingCategory}
-            aria-label="Cor da nova categoria"
-          />
-        </label>
-        <button
-          className="task-card__action"
+        <CategoryColorInput
+          className="task-form__color-picker"
+          value={newCategoryColor}
+          ariaLabel="Cor da nova categoria"
+          disabled={disabled || isCreatingCategory}
+          onChange={onNewCategoryColorChange}
+        />
+        <Button
+          className="task-form__inline-button"
           type="button"
+          variant="secondary"
           onClick={onCreateCategory}
           disabled={disabled || isCreatingCategory}
         >
           {isCreatingCategory ? 'Criando...' : 'Criar categoria'}
-        </button>
+        </Button>
       </div>
     </div>
   );

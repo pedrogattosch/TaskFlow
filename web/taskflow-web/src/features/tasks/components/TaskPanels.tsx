@@ -1,3 +1,4 @@
+import { Button } from '../../../components/Button';
 import { defaultCategoryColor, sortOptions, priorityOptions, statusOptions } from '../constants';
 import type {
   CategorySummaryProps,
@@ -47,9 +48,15 @@ export function CategorySummary({
           <h2 id="categories-title">Categorias</h2>
         </div>
 
-        <button className="categories-panel__edit-button" type="button" onClick={onToggleEditing}>
+        <Button
+          className="categories-panel__edit-button"
+          type="button"
+          variant="secondary"
+          icon={isEditing ? undefined : <TaskIcon name="pencil" />}
+          onClick={onToggleEditing}
+        >
           {isEditing ? 'Concluir edição' : 'Editar categorias'}
-        </button>
+        </Button>
       </div>
 
       {errorMessage && <p className="categories-panel__error" role="alert">{errorMessage}</p>}
@@ -57,12 +64,11 @@ export function CategorySummary({
       <ul className="categories-panel__list">
         {categories.map((category) => (
           <li key={category.id} style={categoryColorStyle(category.color)}>
-            <span className="categories-panel__swatch" aria-hidden="true" />
-            <span>{category.name}</span>
-
-            {isEditing && (
-              <label className="categories-panel__color-field">
+            {isEditing ? (
+              <label className="categories-panel__swatch-control">
+                <span className="categories-panel__swatch" aria-hidden="true" />
                 <input
+                  className="categories-panel__swatch-input"
                   type="color"
                   value={category.color ?? defaultCategoryColor}
                   aria-label={`Cor da categoria ${category.name}`}
@@ -70,7 +76,10 @@ export function CategorySummary({
                   onChange={(event) => onUpdateCategoryColor(category, event.target.value)}
                 />
               </label>
+            ) : (
+              <span className="categories-panel__swatch" aria-hidden="true" />
             )}
+            <span>{category.name}</span>
           </li>
         ))}
       </ul>
@@ -150,14 +159,16 @@ export function TaskFiltersPanel({
           <h2 id="tasks-filter-title">Filtros e ordenação</h2>
         </div>
 
-        <button
+        <Button
           className="task-card__action"
           type="button"
+          variant="secondary"
+          icon={<TaskIcon name="x" />}
           onClick={onClear}
           disabled={isLoading || !hasActiveFilters}
         >
           Limpar filtros
-        </button>
+        </Button>
       </div>
 
       <div className="tasks-filter-panel__grid">
