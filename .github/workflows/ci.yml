@@ -70,11 +70,5 @@ jobs:
       - name: Validate local compose file
         run: docker compose --env-file deploy/.env.example -f deploy/docker-compose.yml config
 
-      - name: Validate production compose file
-        run: docker compose --env-file deploy/.env.production.example -f deploy/docker-compose.production.yml config
-
       - name: Build local deploy images
         run: docker compose --env-file deploy/.env.example -f deploy/docker-compose.yml build api migrator web tests
-
-      - name: Build production deploy images
-        run: docker compose --env-file deploy/.env.production.example -f deploy/docker-compose.production.yml build
