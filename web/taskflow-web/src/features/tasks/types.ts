@@ -71,9 +71,11 @@ export type DraggingTaskState = {
 
 export type CategorySummaryProps = {
   categories: CategoryListItem[];
+  deletingCategoryId: string | null;
   errorMessage: string | null;
   isEditing: boolean;
   isLoading: boolean;
+  onDeleteCategory: (category: CategoryListItem) => void;
   onToggleEditing: () => void;
   onUpdateCategoryColor: (category: CategoryListItem, color: string) => void;
   updatingCategoryId: string | null;
@@ -200,6 +202,7 @@ export type IconName =
   | 'kanban'
   | 'logout'
   | 'palette'
-  | 'sparkles';
+  | 'sparkles'
+  | 'trash';
 
 export type CategoryColorStyle = CSSProperties;

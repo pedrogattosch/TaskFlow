@@ -26,6 +26,7 @@ import {
   getStatusActionErrorMessage,
   getTaskStatusActionForTransition,
   mergeCreatedTask,
+  removeCategory,
   replaceTaskForFilters,
   taskMatchesFilters,
   toEditValues,
@@ -72,6 +73,7 @@ export function useTasksPageState({
   const [newCategoryColor, setNewCategoryColor] = useState(defaultCategoryColor);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [isEditingCategories, setIsEditingCategories] = useState(false);
+  const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
   const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(null);
   const [categoryActionErrorMessage, setCategoryActionErrorMessage] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<TaskViewMode>('list');
@@ -406,7 +408,7 @@ export function useTasksPageState({
   }
 
   async function handleUpdateCategoryColor(category: CategoryListItem, color: string) {
-    if (!accessToken || updatingCategoryId) {
+    if (!accessToken || updatingCategoryId || deletingCategoryId) {
       return;
     }
 
@@ -431,6 +433,59 @@ export function useTasksPageState({
       );
     } finally {
       setUpdatingCategoryId(null);
+    }
+  }
+
+  async function handleDeleteCategory(category: CategoryListItem) {
+    if (!accessToken || updatingCategoryId || deletingCategoryId) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Excluir a categoria "${category.name}"?\n\nAs tarefas vinculadas a ela continuarão existindo, mas ficarão sem categoria.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingCategoryId(category.id);
+      setCategoryActionErrorMessage(null);
+
+      await categoryService.deleteCategory(accessToken, category.id);
+
+      setCategories((current) => removeCategory(current, category.id));
+      setTasks((currentTasks) =>
+        currentTasks.map((task) =>
+          task.categoryId === category.id
+            ? { ...task, categoryId: null, categoryName: null }
+            : task,
+        ),
+      );
+      setEditValues((current) =>
+        current && current.categoryId === category.id
+          ? { ...current, categoryId: '' }
+          : current,
+      );
+
+      if (filters.categoryId === category.id) {
+        updateSearchParams({
+          ...filters,
+          categoryId: '',
+        });
+      }
+    } catch (error) {
+      if (error instanceof HttpClientError && error.status === 401) {
+        logout();
+        return;
+      }
+
+      setCategoryActionErrorMessage(
+        error instanceof Error ? error.message : 'Não foi possível excluir a categoria.',
+      );
+    } finally {
+      setDeletingCategoryId(null);
     }
   }
 
@@ -567,6 +622,7 @@ export function useTasksPageState({
   return {
     actionErrorMessage,
     categories,
+    deletingCategoryId,
     categoryActionErrorMessage,
     categoryErrorMessage,
     dragOverStatus,
@@ -598,6 +654,7 @@ export function useTasksPageState({
     handleChangeTaskStatus,
     handleClearFilters,
     handleCreateCategory,
+    handleDeleteCategory,
     handleDeleteTask,
     handleFilterChange,
     handleKanbanColumnDragOver,

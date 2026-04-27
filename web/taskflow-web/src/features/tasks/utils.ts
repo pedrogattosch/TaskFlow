@@ -329,6 +329,10 @@ export function addOrReplaceCategory(categories: CategoryListItem[], category: C
   return nextCategories.sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'));
 }
 
+export function removeCategory(categories: CategoryListItem[], categoryId: string) {
+  return categories.filter((category) => category.id !== categoryId);
+}
+
 export function formatDate(value: string | null) {
   if (!value) {
     return 'Sem prazo';

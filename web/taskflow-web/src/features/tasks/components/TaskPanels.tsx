@@ -11,9 +11,11 @@ import { categoryColorStyle } from '../utils';
 
 export function CategorySummary({
   categories,
+  deletingCategoryId,
   errorMessage,
   isEditing,
   isLoading,
+  onDeleteCategory,
   onToggleEditing,
   onUpdateCategoryColor,
   updatingCategoryId,
@@ -72,7 +74,9 @@ export function CategorySummary({
                   type="color"
                   value={category.color ?? defaultCategoryColor}
                   aria-label={`Cor da categoria ${category.name}`}
-                  disabled={updatingCategoryId === category.id}
+                  disabled={
+                    updatingCategoryId === category.id || deletingCategoryId === category.id
+                  }
                   onChange={(event) => onUpdateCategoryColor(category, event.target.value)}
                 />
               </label>
@@ -80,6 +84,20 @@ export function CategorySummary({
               <span className="categories-panel__swatch" aria-hidden="true" />
             )}
             <span>{category.name}</span>
+            {isEditing ? (
+              <Button
+                className="categories-panel__delete-button"
+                type="button"
+                variant="destructive"
+                icon={<TaskIcon name="trash" />}
+                onClick={() => onDeleteCategory(category)}
+                disabled={
+                  deletingCategoryId === category.id || updatingCategoryId === category.id
+                }
+              >
+                {deletingCategoryId === category.id ? 'Excluindo...' : 'Excluir'}
+              </Button>
+            ) : null}
           </li>
         ))}
       </ul>

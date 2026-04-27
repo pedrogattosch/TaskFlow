@@ -1,4 +1,4 @@
-import { getJson, postJson, putJson } from './httpClient';
+import { deleteJson, getJson, postJson, putJson } from './httpClient';
 import type { CategoryListItem, CreateCategoryInput, UpdateCategoryInput } from '../types/category';
 
 export const categoryService = {
@@ -16,5 +16,9 @@ export const categoryService = {
     return putJson<CategoryListItem, UpdateCategoryInput>(`/categories/${categoryId}`, category, {
       accessToken,
     });
+  },
+
+  async deleteCategory(accessToken: string, categoryId: string) {
+    return deleteJson(`/categories/${categoryId}`, { accessToken });
   },
 };

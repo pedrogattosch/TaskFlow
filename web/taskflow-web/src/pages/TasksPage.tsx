@@ -13,6 +13,7 @@ export function TasksPage() {
   const {
     actionErrorMessage,
     categories,
+    deletingCategoryId,
     categoryActionErrorMessage,
     categoryErrorMessage,
     dragOverStatus,
@@ -44,6 +45,7 @@ export function TasksPage() {
     handleChangeTaskStatus,
     handleClearFilters,
     handleCreateCategory,
+    handleDeleteCategory,
     handleDeleteTask,
     handleFilterChange,
     handleKanbanColumnDragOver,
@@ -69,9 +71,11 @@ export function TasksPage() {
 
         <CategorySummary
           categories={categories}
+          deletingCategoryId={deletingCategoryId}
           errorMessage={categoryErrorMessage ?? categoryActionErrorMessage}
           isEditing={isEditingCategories}
           isLoading={isLoadingCategories}
+          onDeleteCategory={handleDeleteCategory}
           onToggleEditing={() => setIsEditingCategories((current) => !current)}
           onUpdateCategoryColor={handleUpdateCategoryColor}
           updatingCategoryId={updatingCategoryId}

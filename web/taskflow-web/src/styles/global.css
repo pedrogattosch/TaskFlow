@@ -793,6 +793,13 @@ button:disabled {
   font-weight: 760;
 }
 
+.categories-panel__delete-button {
+  margin-left: 4px;
+  padding-block: 6px;
+  padding-inline: 10px;
+  font-size: 0.78rem;
+}
+
 .categories-panel__swatch,
 .task-card__category-dot {
   width: 10px;
