@@ -1,35 +1,42 @@
 import type { CSSProperties } from 'react';
 import { defaultCategoryColor } from '../constants';
+import type { CategoryColorInputProps } from '../types';
 import { TaskIcon } from './TaskIcon';
-
-type CategoryColorInputProps = {
-  ariaLabel: string;
-  className?: string;
-  disabled?: boolean;
-  value?: string | null;
-  onChange: (color: string) => void;
-};
 
 export function CategoryColorInput({
   ariaLabel,
   className,
   disabled = false,
+  iconName = 'palette',
+  iconOnly = false,
+  showPreview = true,
   value,
   onChange,
 }: CategoryColorInputProps) {
   const resolvedValue = value ?? defaultCategoryColor;
 
   return (
-    <label className={['color-picker', className ?? ''].filter(Boolean).join(' ')}>
+    <label
+      className={[
+        'color-picker',
+        iconOnly ? 'color-picker--icon-only' : '',
+        className ?? '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      title={ariaLabel}
+    >
       <span className="color-picker__trigger">
         <span className="color-picker__leading" aria-hidden="true">
-          <TaskIcon name="palette" />
+          <TaskIcon name={iconName} />
         </span>
-        <span
-          className="color-picker__preview"
-          style={{ '--color-picker-preview': resolvedValue } as CSSProperties}
-          aria-hidden="true"
-        />
+        {showPreview ? (
+          <span
+            className="color-picker__preview"
+            style={{ '--color-picker-preview': resolvedValue } as CSSProperties}
+            aria-hidden="true"
+          />
+        ) : null}
       </span>
       <input
         className="color-picker__input"

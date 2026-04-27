@@ -165,6 +165,9 @@ export function TaskEditForm({
             className="task-form__color-picker"
             value={newCategoryColor}
             ariaLabel="Cor da nova categoria"
+            iconName="pencil"
+            iconOnly
+            showPreview={false}
             disabled={isLoading || isCreatingCategory}
             onChange={onNewCategoryColorChange}
           />

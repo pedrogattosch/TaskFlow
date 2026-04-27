@@ -1,23 +1,113 @@
+import { useEffect, useState, type KeyboardEvent } from 'react';
 import { Button } from '../../../components/Button';
-import { defaultCategoryColor, sortOptions, priorityOptions, statusOptions } from '../constants';
+import { sortOptions, priorityOptions, statusOptions } from '../constants';
 import type {
   CategorySummaryProps,
   TaskFiltersPanelProps,
   TaskSummaryPanelProps,
   TaskViewSelectorProps,
 } from '../types';
+import { CategoryColorInput } from './CategoryColorInput';
 import { TaskIcon } from './TaskIcon';
 import { categoryColorStyle } from '../utils';
+
+function CategorySummaryItem({
+  category,
+  deletingCategoryId,
+  onDeleteCategory,
+  onUpdateCategoryColor,
+  onUpdateCategoryName,
+  updatingCategoryId,
+}: {
+  category: CategorySummaryProps['categories'][number];
+  deletingCategoryId: string | null;
+  onDeleteCategory: CategorySummaryProps['onDeleteCategory'];
+  onUpdateCategoryColor: CategorySummaryProps['onUpdateCategoryColor'];
+  onUpdateCategoryName: CategorySummaryProps['onUpdateCategoryName'];
+  updatingCategoryId: string | null;
+}) {
+  const [draftName, setDraftName] = useState(category.name);
+  const isBusy = updatingCategoryId === category.id || deletingCategoryId === category.id;
+
+  useEffect(() => {
+    setDraftName(category.name);
+  }, [category.name]);
+
+  function commitNameChange() {
+    const normalizedName = draftName.trim();
+
+    if (!normalizedName) {
+      setDraftName(category.name);
+      return;
+    }
+
+    if (normalizedName !== category.name) {
+      onUpdateCategoryName(category, normalizedName);
+    }
+  }
+
+  function handleNameKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      event.currentTarget.blur();
+    }
+
+    if (event.key === 'Escape') {
+      setDraftName(category.name);
+      event.currentTarget.blur();
+    }
+  }
+
+  return (
+    <li style={categoryColorStyle(category.color)}>
+      <span className="categories-panel__swatch" aria-hidden="true" />
+      <input
+        className="categories-panel__name-input"
+        type="text"
+        maxLength={80}
+        value={draftName}
+        aria-label={`Nome da categoria ${category.name}`}
+        disabled={isBusy}
+        onChange={(event) => setDraftName(event.target.value)}
+        onBlur={commitNameChange}
+        onKeyDown={handleNameKeyDown}
+      />
+      <span className="categories-panel__actions">
+        <CategoryColorInput
+          className="categories-panel__icon-control"
+          value={category.color}
+          ariaLabel={`Editar cor da categoria ${category.name}`}
+          iconName="pencil"
+          iconOnly
+          showPreview={false}
+          disabled={isBusy}
+          onChange={(color) => onUpdateCategoryColor(category, color)}
+        />
+        <Button
+          className="categories-panel__icon-button"
+          type="button"
+          variant="secondary"
+          icon={<TaskIcon name="trash" />}
+          onClick={() => onDeleteCategory(category)}
+          disabled={isBusy}
+          aria-label={`Excluir categoria ${category.name}`}
+          title={`Excluir categoria ${category.name}`}
+        >
+          {deletingCategoryId === category.id ? 'Excluindo...' : 'Excluir'}
+        </Button>
+      </span>
+    </li>
+  );
+}
 
 export function CategorySummary({
   categories,
   deletingCategoryId,
   errorMessage,
-  isEditing,
   isLoading,
   onDeleteCategory,
-  onToggleEditing,
   onUpdateCategoryColor,
+  onUpdateCategoryName,
   updatingCategoryId,
 }: CategorySummaryProps) {
   if (isLoading) {
@@ -49,56 +139,21 @@ export function CategorySummary({
         <div>
           <h2 id="categories-title">Categorias</h2>
         </div>
-
-        <Button
-          className="categories-panel__edit-button"
-          type="button"
-          variant="secondary"
-          icon={isEditing ? undefined : <TaskIcon name="pencil" />}
-          onClick={onToggleEditing}
-        >
-          {isEditing ? 'Concluir edição' : 'Editar categorias'}
-        </Button>
       </div>
 
       {errorMessage && <p className="categories-panel__error" role="alert">{errorMessage}</p>}
 
       <ul className="categories-panel__list">
         {categories.map((category) => (
-          <li key={category.id} style={categoryColorStyle(category.color)}>
-            {isEditing ? (
-              <label className="categories-panel__swatch-control">
-                <span className="categories-panel__swatch" aria-hidden="true" />
-                <input
-                  className="categories-panel__swatch-input"
-                  type="color"
-                  value={category.color ?? defaultCategoryColor}
-                  aria-label={`Cor da categoria ${category.name}`}
-                  disabled={
-                    updatingCategoryId === category.id || deletingCategoryId === category.id
-                  }
-                  onChange={(event) => onUpdateCategoryColor(category, event.target.value)}
-                />
-              </label>
-            ) : (
-              <span className="categories-panel__swatch" aria-hidden="true" />
-            )}
-            <span>{category.name}</span>
-            {isEditing ? (
-              <Button
-                className="categories-panel__delete-button"
-                type="button"
-                variant="destructive"
-                icon={<TaskIcon name="trash" />}
-                onClick={() => onDeleteCategory(category)}
-                disabled={
-                  deletingCategoryId === category.id || updatingCategoryId === category.id
-                }
-              >
-                {deletingCategoryId === category.id ? 'Excluindo...' : 'Excluir'}
-              </Button>
-            ) : null}
-          </li>
+          <CategorySummaryItem
+            key={category.id}
+            category={category}
+            deletingCategoryId={deletingCategoryId}
+            onDeleteCategory={onDeleteCategory}
+            onUpdateCategoryColor={onUpdateCategoryColor}
+            onUpdateCategoryName={onUpdateCategoryName}
+            updatingCategoryId={updatingCategoryId}
+          />
         ))}
       </ul>
     </section>
