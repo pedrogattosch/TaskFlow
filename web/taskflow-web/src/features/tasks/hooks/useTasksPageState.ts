@@ -72,7 +72,6 @@ export function useTasksPageState({
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState(defaultCategoryColor);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
-  const [isEditingCategories, setIsEditingCategories] = useState(false);
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
   const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(null);
   const [categoryActionErrorMessage, setCategoryActionErrorMessage] = useState<string | null>(null);
@@ -422,6 +421,55 @@ export function useTasksPageState({
       });
 
       setCategories((current) => addOrReplaceCategory(current, updatedCategory));
+      setTasks((currentTasks) =>
+        currentTasks.map((task) =>
+          task.categoryId === category.id
+            ? { ...task, categoryName: updatedCategory.name }
+            : task,
+        ),
+      );
+    } catch (error) {
+      if (error instanceof HttpClientError && error.status === 401) {
+        logout();
+        return;
+      }
+
+      setCategoryActionErrorMessage(
+        error instanceof Error ? error.message : 'Não foi possível atualizar a categoria.',
+      );
+    } finally {
+      setUpdatingCategoryId(null);
+    }
+  }
+
+  async function handleUpdateCategoryName(category: CategoryListItem, name: string) {
+    if (!accessToken || updatingCategoryId || deletingCategoryId) {
+      return;
+    }
+
+    const normalizedName = name.trim();
+
+    if (!normalizedName || normalizedName === category.name) {
+      return;
+    }
+
+    try {
+      setUpdatingCategoryId(category.id);
+      setCategoryActionErrorMessage(null);
+
+      const updatedCategory = await categoryService.updateCategory(accessToken, category.id, {
+        name: normalizedName,
+        color: category.color,
+      });
+
+      setCategories((current) => addOrReplaceCategory(current, updatedCategory));
+      setTasks((currentTasks) =>
+        currentTasks.map((task) =>
+          task.categoryId === category.id
+            ? { ...task, categoryName: updatedCategory.name }
+            : task,
+        ),
+      );
     } catch (error) {
       if (error instanceof HttpClientError && error.status === 401) {
         logout();
@@ -633,7 +681,6 @@ export function useTasksPageState({
     errorMessage,
     filters,
     isCreatingCategory,
-    isEditingCategories,
     isLoading,
     isLoadingCategories,
     isLoadingSummary,
@@ -645,7 +692,6 @@ export function useTasksPageState({
     tasks,
     updatingCategoryId,
     viewMode,
-    setIsEditingCategories,
     setNewCategoryColor,
     setNewCategoryName,
     setViewMode,
@@ -664,6 +710,7 @@ export function useTasksPageState({
     handleTaskDragEnd,
     handleTaskDragStart,
     handleUpdateCategoryColor,
+    handleUpdateCategoryName,
     handleUpdateTask,
   };
 }

@@ -24,7 +24,6 @@ export function TasksPage() {
     errorMessage,
     filters,
     isCreatingCategory,
-    isEditingCategories,
     isLoading,
     isLoadingCategories,
     isLoadingSummary,
@@ -36,7 +35,6 @@ export function TasksPage() {
     tasks,
     updatingCategoryId,
     viewMode,
-    setIsEditingCategories,
     setNewCategoryColor,
     setNewCategoryName,
     setViewMode,
@@ -55,6 +53,7 @@ export function TasksPage() {
     handleTaskDragEnd,
     handleTaskDragStart,
     handleUpdateCategoryColor,
+    handleUpdateCategoryName,
     handleUpdateTask,
   } = useTasksPageState({
     accessToken: session?.accessToken,
@@ -73,11 +72,10 @@ export function TasksPage() {
           categories={categories}
           deletingCategoryId={deletingCategoryId}
           errorMessage={categoryErrorMessage ?? categoryActionErrorMessage}
-          isEditing={isEditingCategories}
           isLoading={isLoadingCategories}
           onDeleteCategory={handleDeleteCategory}
-          onToggleEditing={() => setIsEditingCategories((current) => !current)}
           onUpdateCategoryColor={handleUpdateCategoryColor}
+          onUpdateCategoryName={handleUpdateCategoryName}
           updatingCategoryId={updatingCategoryId}
         />
 

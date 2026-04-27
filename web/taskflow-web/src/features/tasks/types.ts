@@ -8,6 +8,7 @@ import type {
   TaskStatus,
   TaskSummary,
 } from '../../types/task';
+import type { IconName } from './components/TaskIcon';
 
 export type { TaskListItem, TaskPriority, TaskSortBy, TaskSortDirection, TaskStatus, TaskSummary };
 
@@ -73,11 +74,10 @@ export type CategorySummaryProps = {
   categories: CategoryListItem[];
   deletingCategoryId: string | null;
   errorMessage: string | null;
-  isEditing: boolean;
   isLoading: boolean;
   onDeleteCategory: (category: CategoryListItem) => void;
-  onToggleEditing: () => void;
   onUpdateCategoryColor: (category: CategoryListItem, color: string) => void;
+  onUpdateCategoryName: (category: CategoryListItem, name: string) => void;
   updatingCategoryId: string | null;
 };
 
@@ -192,17 +192,15 @@ export type TaskListContentProps = {
   viewMode: TaskViewMode;
 };
 
-export type IconName =
-  | 'user'
-  | 'plus'
-  | 'pencil'
-  | 'x'
-  | 'list'
-  | 'grid'
-  | 'kanban'
-  | 'logout'
-  | 'palette'
-  | 'sparkles'
-  | 'trash';
-
 export type CategoryColorStyle = CSSProperties;
+
+export type CategoryColorInputProps = {
+  ariaLabel: string;
+  className?: string;
+  disabled?: boolean;
+  iconName?: IconName;
+  iconOnly?: boolean;
+  showPreview?: boolean;
+  value?: string | null;
+  onChange: (color: string) => void;
+};

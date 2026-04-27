@@ -1,4 +1,15 @@
-import type { IconName } from '../types';
+export type IconName =
+  | 'user'
+  | 'plus'
+  | 'pencil'
+  | 'x'
+  | 'list'
+  | 'grid'
+  | 'kanban'
+  | 'logout'
+  | 'palette'
+  | 'sparkles'
+  | 'trash';
 
 export function TaskIcon({ name }: { name: IconName }) {
   const paths: Record<IconName, string> = {
