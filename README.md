@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/taskflow-header.png" alt="TaskFlow - Organize tarefas, acompanhe progresso e aumente sua produtividade" width="100%">
+</p>
+
 # TaskFlow
 
 TaskFlow é uma aplicação web de gerenciamento de tarefas com back-end em ASP.NET Core, front-end em React e persistência em SQL Server. O projeto está organizado em camadas, com separação entre domínio, casos de uso, infraestrutura, API, interface web e testes.
@@ -38,9 +42,7 @@ TaskFlow/
 │  │  ├─ migrate.sh
 │  │  └─ run-tests.sh
 │  ├─ .env.example
-│  ├─ .env.production.example
-│  ├─ docker-compose.yml
-│  └─ docker-compose.production.yml
+│  └─ docker-compose.yml
 ├─ docs/
 │  ├─ architecture.md
 │  ├─ backlog.md
@@ -52,7 +54,6 @@ TaskFlow/
 │  │  ├─ Properties/
 │  │  ├─ appsettings.json
 │  │  ├─ appsettings.Development.json
-│  │  ├─ appsettings.Production.json
 │  │  ├─ Dockerfile
 │  │  └─ Program.cs
 │  ├─ TaskFlow.Application/
@@ -219,46 +220,6 @@ Encerrar e remover o volume do banco local:
 
 ```powershell
 docker compose --env-file deploy/.env -f deploy/docker-compose.yml down -v
-```
-
-## Publicação com Docker
-
-### 1. Criar e configurar `deploy/.env.production`
-
-Na raiz do repositório:
-
-```powershell
-Copy-Item deploy/.env.production.example deploy/.env.production
-```
-
-O arquivo `deploy/.env.production` deve apontar para um SQL Server já existente.
-
-### 2. Validar a configuração
-
-```powershell
-docker compose --env-file deploy/.env.production -f deploy/docker-compose.production.yml config
-```
-
-### 3. Fazer o build das imagens
-
-```powershell
-docker compose --env-file deploy/.env.production -f deploy/docker-compose.production.yml build
-```
-
-### 4. Subir o ambiente de produção
-
-```powershell
-docker compose --env-file deploy/.env.production -f deploy/docker-compose.production.yml up -d
-```
-
-Com o ambiente em execução é possível acessar a aplicação:
-
-- `http://localhost` ou a porta definida em `WEB_PORT`
-
-### 5. Encerrar o ambiente de produção
-
-```powershell
-docker compose --env-file deploy/.env.production -f deploy/docker-compose.production.yml down
 ```
 
 ## Testes
