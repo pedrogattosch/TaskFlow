@@ -1,6 +1,7 @@
 using TaskFlow.Application.DTOs.Categories;
 using TaskFlow.Application.Exceptions;
 using TaskFlow.Application.UseCases.Categories.CreateCategory;
+using TaskFlow.Application.UseCases.Categories.DeleteCategory;
 using TaskFlow.Application.UseCases.Categories.GetCategories;
 using TaskFlow.Domain.Entities;
 using Task = System.Threading.Tasks.Task;
@@ -75,5 +76,42 @@ public class CategoryUseCaseTests
 
         Assert.Single(response);
         Assert.Equal("Trabalho", response[0].Name);
+    }
+
+    [Fact]
+    public async Task DeleteCategory_ShouldRemoveCategory_WhenItBelongsToAuthenticatedUser()
+    {
+        var user = new User("Pedro", "pedro@example.com", "hash");
+        var users = new InMemoryUserRepository();
+        var categories = new InMemoryCategoryRepository();
+        var unitOfWork = new CountingUnitOfWork();
+        var category = new Category(user.Id, "Trabalho");
+        await users.AddAsync(user);
+        await categories.AddAsync(category);
+
+        var useCase = new DeleteCategoryUseCase(users, categories, unitOfWork);
+
+        await useCase.ExecuteAsync(user.Id, category.Id);
+
+        Assert.Empty(categories.Categories);
+        Assert.Equal(1, unitOfWork.SaveChangesCalls);
+    }
+
+    [Fact]
+    public async Task DeleteCategory_ShouldThrowNotFound_WhenCategoryDoesNotBelongToAuthenticatedUser()
+    {
+        var user = new User("Pedro", "pedro@example.com", "hash");
+        var otherUser = new User("Ana", "ana@example.com", "hash");
+        var users = new InMemoryUserRepository();
+        var categories = new InMemoryCategoryRepository();
+        var category = new Category(otherUser.Id, "Pessoal");
+        await users.AddAsync(user);
+        await users.AddAsync(otherUser);
+        await categories.AddAsync(category);
+
+        var useCase = new DeleteCategoryUseCase(users, categories, new CountingUnitOfWork());
+
+        await Assert.ThrowsAsync<ApplicationNotFoundException>(() =>
+            useCase.ExecuteAsync(user.Id, category.Id));
     }
 }

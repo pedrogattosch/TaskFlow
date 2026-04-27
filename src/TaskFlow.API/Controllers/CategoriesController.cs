@@ -3,6 +3,7 @@ using TaskFlow.Application.DTOs.Categories;
 using TaskFlow.Application.Exceptions;
 using TaskFlow.Application.Interfaces.Auth;
 using TaskFlow.Application.UseCases.Categories.CreateCategory;
+using TaskFlow.Application.UseCases.Categories.DeleteCategory;
 using TaskFlow.Application.UseCases.Categories.GetCategories;
 using TaskFlow.Application.UseCases.Categories.UpdateCategory;
 using TaskFlow.Domain.Exceptions;
@@ -14,20 +15,54 @@ namespace TaskFlow.API.Controllers;
 public sealed class CategoriesController : ControllerBase
 {
     private readonly ICreateCategoryUseCase _createCategoryUseCase;
+    private readonly IDeleteCategoryUseCase _deleteCategoryUseCase;
     private readonly IGetCategoriesUseCase _getCategoriesUseCase;
     private readonly IUpdateCategoryUseCase _updateCategoryUseCase;
     private readonly IJwtTokenValidator _jwtTokenValidator;
 
     public CategoriesController(
         ICreateCategoryUseCase createCategoryUseCase,
+        IDeleteCategoryUseCase deleteCategoryUseCase,
         IGetCategoriesUseCase getCategoriesUseCase,
         IUpdateCategoryUseCase updateCategoryUseCase,
         IJwtTokenValidator jwtTokenValidator)
     {
         _createCategoryUseCase = createCategoryUseCase;
+        _deleteCategoryUseCase = deleteCategoryUseCase;
         _getCategoriesUseCase = getCategoriesUseCase;
         _updateCategoryUseCase = updateCategoryUseCase;
         _jwtTokenValidator = jwtTokenValidator;
+    }
+
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteCategory(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = GetAuthenticatedUserId();
+
+        if (!userId.HasValue)
+            return Unauthorized(CreateProblem("Usuário não autenticado.", StatusCodes.Status401Unauthorized));
+
+        try
+        {
+            await _deleteCategoryUseCase.ExecuteAsync(userId.Value, id, cancellationToken);
+            return NoContent();
+        }
+        catch (ApplicationValidationException exception)
+        {
+            return BadRequest(CreateProblem(exception.Message, StatusCodes.Status400BadRequest));
+        }
+        catch (ApplicationUnauthorizedException exception)
+        {
+            return Unauthorized(CreateProblem(exception.Message, StatusCodes.Status401Unauthorized));
+        }
+        catch (ApplicationNotFoundException exception)
+        {
+            return NotFound(CreateProblem(exception.Message, StatusCodes.Status404NotFound));
+        }
     }
 
     [HttpGet]

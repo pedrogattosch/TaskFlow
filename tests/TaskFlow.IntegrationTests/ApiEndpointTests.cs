@@ -104,6 +104,17 @@ public class ApiEndpointTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Contains(categories, category =>
             category.Id == createdCategory.Id &&
             category.Color == "#27675d");
+
+        var deleteResponse = await _client.DeleteAsync($"/api/categories/{createdCategory.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        var listAfterDeleteResponse = await _client.GetAsync("/api/categories");
+
+        Assert.Equal(HttpStatusCode.OK, listAfterDeleteResponse.StatusCode);
+        var categoriesAfterDelete = await listAfterDeleteResponse.Content.ReadFromJsonAsync<List<CategoryResponse>>();
+        Assert.NotNull(categoriesAfterDelete);
+        Assert.DoesNotContain(categoriesAfterDelete, category => category.Id == createdCategory.Id);
     }
 
     [Fact]

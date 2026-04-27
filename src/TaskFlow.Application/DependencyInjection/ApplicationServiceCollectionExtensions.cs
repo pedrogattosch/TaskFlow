@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TaskFlow.Application.UseCases.Auth.LoginUser;
 using TaskFlow.Application.UseCases.Auth.RegisterUser;
 using TaskFlow.Application.UseCases.Categories.CreateCategory;
+using TaskFlow.Application.UseCases.Categories.DeleteCategory;
 using TaskFlow.Application.UseCases.Categories.GetCategories;
 using TaskFlow.Application.UseCases.Categories.UpdateCategory;
 using TaskFlow.Application.UseCases.Tasks.CreateTask;
@@ -20,6 +21,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();
         services.AddScoped<ILoginUserUseCase, LoginUserUseCase>();
         services.AddScoped<ICreateCategoryUseCase, CreateCategoryUseCase>();
+        services.AddScoped<IDeleteCategoryUseCase, DeleteCategoryUseCase>();
         services.AddScoped<IGetCategoriesUseCase, GetCategoriesUseCase>();
         services.AddScoped<IUpdateCategoryUseCase, UpdateCategoryUseCase>();
         services.AddScoped<ICreateTaskUseCase, CreateTaskUseCase>();
