@@ -1,51 +1,69 @@
 # Arquitetura — TaskFlow
 
-## 1. Visão arquitetural
+## 1. Objetivo
 
-O TaskFlow será desenvolvido com uma arquitetura em camadas, inspirada em Clean Architecture, com separação clara de responsabilidades entre domínio, aplicação, infraestrutura, API, cross-cutting, testes e front-end.
+O TaskFlow é uma aplicação web de gerenciamento de tarefas organizada em camadas, inspirada em Clean Architecture. A solução separa domínio, casos de uso, infraestrutura, API HTTP, interface web e testes para manter baixo acoplamento entre regras de negócio, persistência e apresentação.
 
-Essa abordagem foi escolhida para manter o projeto organizado, facilitar a manutenção, permitir evolução incremental e demonstrar boas práticas de desenvolvimento.
+O back-end expõe uma API REST em ASP.NET Core. O front-end React consome essa API por HTTP, usando rotas públicas para autenticação e rotas protegidas para o fluxo de tarefas. A persistência principal usa SQL Server via Entity Framework Core.
 
 ---
 
 ## 2. Stack
 
 ### Back-end
-- .NET
+
+- .NET 10
 - ASP.NET Core Web API
-- Entity Framework Core
+- Entity Framework Core 10
 - SQL Server
-- JWT para autenticação
-- Swagger para documentação da API
+- JWT assinado com HMAC
+- PBKDF2 para hash de senha
+- Swagger em ambiente de desenvolvimento
+- Health check em `/health`
 
 ### Front-end
+
 - React
 - TypeScript
-- Consumo da API via HTTP
+- Vite
+- React Router
+
+### Infraestrutura
+
+- Docker
+- Docker Compose
+- SQL Server em ambiente local conteinerizado
 
 ### Testes
+
 - xUnit
-- Testes unitários
-- Testes de integração
+- Testes unitários de domínio e aplicação
+- Testes de integração com `WebApplicationFactory`
+- SQLite em memória nos testes de integração
 
 ---
 
 ## 3. Estrutura da solução
 
-A solução deverá ser organizada da seguinte forma:
-
 ```text
 TaskFlow/
+├─ deploy/
+│  ├─ docker/
+│  ├─ docker-compose.yml
+│  └─ docker-compose.production.yml
 ├─ docs/
+│  ├─ architecture.md
+│  ├─ backlog.md
+│  └─ vision.md
 ├─ src/
-│  ├─ TaskFlow.Domain/
+│  ├─ TaskFlow.slnx
+│  ├─ TaskFlow.API/
 │  ├─ TaskFlow.Application/
-│  ├─ TaskFlow.Infrastructure/
-│  ├─ TaskFlow.CrossCutting/
-│  └─ TaskFlow.API/
+│  ├─ TaskFlow.Domain/
+│  └─ TaskFlow.Infrastructure/
 ├─ tests/
-│  ├─ TaskFlow.UnitTests/
-│  └─ TaskFlow.IntegrationTests/
+│  ├─ TaskFlow.IntegrationTests/
+│  └─ TaskFlow.UnitTests/
 ├─ web/
 │  └─ taskflow-web/
 └─ README.md
@@ -56,138 +74,123 @@ TaskFlow/
 ## 4. Responsabilidade de cada camada
 
 ### TaskFlow.Domain
-Responsável por representar o núcleo do sistema.
 
-Deve conter:
-- entidades
-- enums
-- regras de negócio
-- contratos essenciais
-- exceções de domínio
+Contém o núcleo de negócio do sistema.
 
-Essa camada não deve depender de infraestrutura, banco de dados ou framework de interface.
+Responsabilidades atuais:
+
+- entidades `User`, `Task` e `Category`;
+- enums de prioridade e status de tarefa;
+- regras de negócio das entidades;
+- contratos de repositório;
+- exceções de domínio;
+- value object `AuditInfo`.
+
+Essa camada não depende de ASP.NET Core, EF Core, banco de dados ou interface web.
 
 ### TaskFlow.Application
-Responsável pelos casos de uso da aplicação.
 
-Deve conter:
-- serviços de aplicação
-- DTOs
-- validações
-- contratos de entrada e saída
-- orquestração do fluxo da aplicação
+Contém os casos de uso e contratos de aplicação.
 
-Essa camada coordena o uso do domínio sem conter detalhes técnicos de persistência.
+Responsabilidades atuais:
+
+- DTOs de entrada e saída;
+- casos de uso de autenticação, categorias e tarefas;
+- validações de fluxo de aplicação;
+- mapeamento de entidades para responses;
+- contratos de autenticação e unidade de trabalho;
+- exceções de aplicação.
+
+A camada Application depende do Domain e coordena o fluxo sem conhecer detalhes de SQL Server, EF Core ou controllers.
 
 ### TaskFlow.Infrastructure
-Responsável pela implementação técnica.
 
-Deve conter:
-- DbContext
-- mapeamentos do EF Core
-- repositórios
-- autenticação JWT
-- acesso a banco de dados
-- migrations
-- serviços externos
+Contém implementações técnicas.
 
-### TaskFlow.CrossCutting
-Responsável por concentrar configurações e componentes transversais da aplicação.
+Responsabilidades atuais:
 
-Deve conter:
-- injeção de dependência
-- registro de serviços
-- configurações compartilhadas
-- utilitários transversais
-- abstrações reutilizáveis entre camadas
-- centralização de políticas comuns
-
-Essa camada deve existir apenas quando realmente contribuir com organização e clareza, evitando virar um repositório genérico de código solto.
+- `AppDbContext`;
+- configurações de entidades do EF Core;
+- migrations;
+- repositórios;
+- `UnitOfWork`;
+- hash de senha com PBKDF2;
+- geração e validação de JWT;
+- registro de dependências de infraestrutura.
 
 ### TaskFlow.API
-Responsável pela exposição dos endpoints HTTP.
 
-Deve conter:
-- controllers ou endpoints
-- configuração de DI
-- middlewares
-- Swagger
-- tratamento global de exceções
-- autenticação e autorização
+Expõe a aplicação por HTTP.
 
-### TaskFlow.UnitTests
-Responsável por validar regras de negócio e comportamentos isolados.
+Responsabilidades atuais:
 
-Deve conter testes para:
-- entidades
-- regras de domínio
-- validações
-- casos de uso
+- controllers REST;
+- configuração de serviços e pipeline;
+- Swagger em desenvolvimento;
+- CORS configurável;
+- forwarded headers para execução atrás do Nginx/proxy;
+- health check;
+- tradução de exceções esperadas para `ProblemDetails`.
 
-### TaskFlow.IntegrationTests
-Responsável por validar o comportamento integrado da aplicação.
-
-Deve conter testes para:
-- endpoints
-- persistência
-- autenticação
-- fluxos principais entre API, Application e Infrastructure
+Os controllers não acessam o banco diretamente. Eles recebem DTOs, resolvem o usuário autenticado quando necessário e delegam o comportamento para casos de uso.
 
 ### Front-end
-Responsável pela interface com o usuário.
 
-Deve conter:
-- páginas
-- componentes reutilizáveis
-- rotas
-- hooks
-- serviços de integração com a API
-- tratamento de loading e erro
+Contém a interface web em React.
+
+Responsabilidades atuais:
+
+- páginas de login, cadastro, listagem e criação de tarefas;
+- rotas públicas e protegidas;
+- contexto de autenticação;
+- armazenamento local do token;
+- serviços HTTP para autenticação, categorias e tarefas;
+- componentes reutilizáveis;
+- tema claro/escuro.
+
+No desenvolvimento local, o Vite encaminha `/api` para `http://localhost:5181`. Em Docker, o Nginx serve a build e encaminha `/api`, `/health` e `/swagger` para a API.
+
+### Testes
+
+Responsabilidades atuais:
+
+- `TaskFlow.UnitTests`: valida regras de domínio e casos de uso com test doubles;
+- `TaskFlow.IntegrationTests`: valida fluxos HTTP integrados usando `WebApplicationFactory` e SQLite em memória.
 
 ---
 
 ## 5. Fluxo da aplicação
 
-1. O usuário interage com a interface React.
-2. O front-end envia requisições para a API.
-3. A API recebe a requisição e encaminha para a camada de Application.
-4. A camada de Application executa o caso de uso.
-5. O domínio aplica as regras de negócio.
-6. A Infrastructure persiste ou consulta os dados no SQL Server.
-7. Componentes transversais podem ser resolvidos via CrossCutting, quando necessário.
-8. A resposta retorna para a API e depois para o front-end.
+1. O usuário acessa a interface React.
+2. O front-end envia requisições HTTP para a API.
+3. A API recebe a requisição no controller correspondente.
+4. Para rotas protegidas, o controller extrai o token Bearer e usa `IJwtTokenValidator` para obter o `UserId`.
+5. O controller chama o caso de uso da camada Application.
+6. O caso de uso valida a entrada, consulta repositórios quando necessário e aciona regras do Domain.
+7. A Infrastructure executa consultas e persistência via EF Core e SQL Server.
+8. A Application retorna DTOs de resposta.
+9. A API devolve a resposta HTTP para o front-end.
 
 ---
 
-## 6. Requisitos do sistema
+## 6. Funcionalidades implementadas
 
-### 6.1 Requisitos funcionais
-
-| Código | Requisito funcional |
+| Área | Funcionalidade |
 |---|---|
-| RF01 | O sistema deve permitir cadastro de usuário. |
-| RF02 | O sistema deve permitir login e logout. |
-| RF03 | O sistema deve permitir criar uma tarefa. |
-| RF04 | O sistema deve permitir editar dados de uma tarefa. |
-| RF05 | O sistema deve permitir alterar o status de uma tarefa. |
-| RF06 | O sistema deve permitir excluir uma tarefa de forma lógica. |
-| RF07 | O sistema deve permitir consultar tarefa por id. |
-| RF08 | O sistema deve permitir listar tarefas com filtros e ordenação. |
-| RF09 | O sistema deve exibir um resumo do total de tarefas por status. |
-| RF10 | O sistema deve registrar auditoria básica de criação e atualização. |
-
-### 6.2 Requisitos não funcionais
-
-| Código | Requisito não funcional |
-|---|---|
-| RNF01 | API REST documentada com Swagger. |
-| RNF02 | Arquitetura organizada por camadas com separação de responsabilidades. |
-| RNF03 | Persistência em SQL Server usando Entity Framework Core. |
-| RNF04 | Front-end React com componentes reutilizáveis e consumo via HTTP. |
-| RNF05 | Validação de entrada no back-end e feedback amigável no front-end. |
-| RNF06 | Autenticação baseada em JWT. |
-| RNF07 | Código versionado em Git com commits pequenos e descritivos. |
-| RNF08 | Cobertura mínima de testes nas regras críticas do domínio. |
+| Autenticação | Cadastro de usuário |
+| Autenticação | Login com geração de JWT |
+| Autenticação | Rotas protegidas no front-end |
+| Categorias | Criação de categoria por usuário autenticado |
+| Categorias | Listagem de categorias do usuário autenticado |
+| Categorias | Atualização de categoria |
+| Tarefas | Criação de tarefa |
+| Tarefas | Listagem de tarefas com filtros e ordenação |
+| Tarefas | Resumo de tarefas por status |
+| Tarefas | Atualização completa de tarefa |
+| Tarefas | Atualização de status |
+| Tarefas | Exclusão lógica |
+| Infraestrutura | Health check em `/health` |
+| Infraestrutura | Execução local e produção via Docker Compose |
 
 ---
 
@@ -198,152 +201,201 @@ Deve conter:
 | RN01 | Toda tarefa deve possuir título com tamanho entre 3 e 120 caracteres. |
 | RN02 | A descrição da tarefa é opcional, com limite de 1000 caracteres. |
 | RN03 | Toda tarefa deve pertencer a um usuário. |
-| RN04 | Uma tarefa deve possuir exatamente um status ativo. |
-| RN05 | Uma tarefa concluída deve registrar data de conclusão. |
-| RN06 | Uma tarefa cancelada não pode voltar para "em andamento" sem reativação explícita. |
+| RN04 | Uma tarefa deve possuir um status válido. |
+| RN05 | Uma tarefa concluída registra `CompletedAt`; ao sair de concluída, esse campo volta para `null`. |
+| RN06 | Uma tarefa cancelada não pode mudar diretamente para outro status; precisa ser reativada pela regra de domínio. |
 | RN07 | O prazo, quando informado, não pode ser anterior à data de criação. |
-| RN08 | A prioridade deve ser uma entre: baixa, média ou alta. |
-| RN09 | A exclusão será lógica para preservar histórico e rastreabilidade. |
+| RN08 | A prioridade deve ser um valor válido do enum de prioridade. |
+| RN09 | A exclusão de tarefa é lógica por meio de `IsDeleted` e auditoria. |
 | RN10 | Categorias são opcionais, mas, quando usadas, devem pertencer ao mesmo usuário da tarefa. |
+| RN11 | O nome da categoria é único por usuário. |
+| RN12 | O e-mail do usuário é único. |
 
 ---
 
 ## 8. Entidades principais
 
 ### User
-Representa o usuário autenticado do sistema.
+
+Representa o usuário autenticado.
 
 Campos principais:
-- Id
-- Name
-- Email
-- PasswordHash
-- CreatedAt
-- UpdatedAt
+
+- `Id`
+- `Name`
+- `Email`
+- `PasswordHash`
+- `AuditInfo`
 
 ### Task
-Representa a tarefa cadastrada no sistema.
+
+Representa uma tarefa do usuário.
 
 Campos principais:
-- Id
-- UserId
-- CategoryId
-- Title
-- Description
-- Priority
-- Status
-- DueDate
-- CompletedAt
-- IsDeleted
-- CreatedAt
-- UpdatedAt
+
+- `Id`
+- `UserId`
+- `CategoryId`
+- `Title`
+- `Description`
+- `Priority`
+- `Status`
+- `DueDate`
+- `CompletedAt`
+- `IsDeleted`
+- `AuditInfo`
 
 ### Category
+
 Representa uma categoria usada para agrupar tarefas.
 
 Campos principais:
-- Id
-- UserId
-- Name
-- Color
-- CreatedAt
+
+- `Id`
+- `UserId`
+- `Name`
+- `Color`
+- `AuditInfo`
 
 ---
 
 ## 9. Banco de dados
 
-O banco de dados será relacional, utilizando SQL Server.
+O banco de dados principal é relacional e usa SQL Server.
 
-### Tabelas principais
-- Users
-- Tasks
-- Categories
+### Tabelas
+
+- `Users`
+- `Tasks`
+- `Categories`
 
 ### Relacionamentos
-- Users possui relação 1:N com Tasks
-- Users possui relação 1:N com Categories
-- Categories possui relação 1:N com Tasks
-- Tasks possui Category opcional
 
-### Índices recomendados
-- índice único em Users.Email
-- índice composto em Tasks(UserId, Status)
-- índice composto em Tasks(UserId, DueDate)
-- índice em Categories(UserId, Name)
+- `Users` possui relação 1:N com `Tasks`;
+- `Users` possui relação 1:N com `Categories`;
+- `Tasks` possui `Category` opcional;
+- ao remover uma categoria, as tarefas relacionadas ficam com `CategoryId` nulo;
+- exclusões de usuário referenciado por tarefas ou categorias são restritas pela configuração do EF Core.
+
+### Índices
+
+- índice único em `Users.Email`;
+- índice único em `Categories(UserId, Name)`;
+- índice em `Tasks(UserId, Status)`;
+- índice em `Tasks(UserId, DueDate)`.
 
 ---
 
-## 10. API inicial sugerida
+## 10. API
 
 ### Autenticação
+
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 
+### Categorias
+
+- `GET /api/categories`
+- `POST /api/categories`
+- `PUT /api/categories/{id}`
+
 ### Tarefas
+
 - `GET /api/tasks`
-- `GET /api/tasks/{id}`
+- `GET /api/tasks/summary`
 - `POST /api/tasks`
 - `PUT /api/tasks/{id}`
 - `PATCH /api/tasks/{id}/status`
 - `DELETE /api/tasks/{id}`
 
-### Categorias
-- `GET /api/categories`
-- `POST /api/categories`
+### Infraestrutura
 
-### Dashboard
-- `GET /api/dashboard/summary`
+- `GET /health`
 
----
+### Filtros e ordenação de tarefas
 
-## 11. Padrões e diretrizes
+`GET /api/tasks` aceita:
 
-- não colocar regra de negócio em controllers
-- não expor entidades diretamente na API
-- usar DTOs para entrada e saída
-- centralizar validações importantes no back-end
-- usar migrations para evolução do banco
-- manter código simples e legível
-- evitar abstrações desnecessárias
-- criar commits pequenos e descritivos
-- preferir organização por responsabilidade e clareza
-- usar CrossCutting apenas para preocupações realmente transversais
+- `status`
+- `priority`
+- `categoryId`
+- `sortBy`
+- `sortDirection`
 
 ---
 
-## 12. Qualidade e segurança
+## 11. Autenticação e autorização
 
-- senhas devem ser armazenadas com hash seguro
-- rotas privadas devem usar JWT
-- cada usuário só poderá acessar os próprios dados
-- erros devem ser tratados globalmente
-- logs de erro devem ser registrados
-- testes unitários devem validar regras críticas
-- testes de integração devem cobrir fluxos principais
+O login gera um JWT contendo a identificação do usuário. Nas rotas protegidas de categorias e tarefas, os controllers leem o header `Authorization: Bearer <token>` e usam `IJwtTokenValidator` para obter o `UserId`.
+
+A autorização é aplicada por isolamento de dados nos casos de uso e repositórios, operações de categorias e tarefas sempre usam o usuário autenticado como parte do fluxo.
 
 ---
 
-## 13. Estratégia de testes
+## 12. Tratamento de erros
+
+Os controllers convertem exceções esperadas para respostas HTTP com `ProblemDetails`:
+
+- `ApplicationValidationException` e `DomainException`: `400 Bad Request`;
+- `ApplicationUnauthorizedException`: `401 Unauthorized`;
+- `ApplicationNotFoundException`: `404 Not Found`;
+- `ApplicationConflictException`: `409 Conflict`.
+
+Não há middleware global de exceções implementado no estado atual, o tratamento é feito diretamente nos controllers.
+
+---
+
+## 13. Infraestrutura de execução
+
+### Local sem Docker
+
+- API executada com `dotnet run --project src/TaskFlow.API --launch-profile http`;
+- Vite executado em `web/taskflow-web` com `npm run dev`;
+- proxy local do Vite encaminha `/api` para `http://localhost:5181`.
+
+### Local com Docker
+
+`deploy/docker-compose.yml` sobe:
+
+- `db`: SQL Server;
+- `migrator`: aplica migrations antes da API;
+- `api`: aplicação ASP.NET Core;
+- `web`: Nginx servindo o front-end e encaminhando chamadas para a API;
+- `tests`: perfil opcional para execução de testes em container.
+
+---
+
+## 14. Estratégia de testes
 
 ### Testes unitários
-Devem validar comportamentos isolados do domínio e da aplicação, como:
-- validação de título da tarefa
-- mudança de status
-- regras de prioridade
-- regras de prazo
-- validações de entrada
+
+Validam comportamentos isolados de domínio e aplicação, incluindo:
+
+- autenticação;
+- criação e atualização de categorias;
+- criação, listagem, resumo, atualização, mudança de status e exclusão lógica de tarefas;
+- regras de entidades.
 
 ### Testes de integração
-Devem validar o comportamento do sistema funcionando em conjunto, como:
-- cadastro de usuário
-- login
-- criação de tarefa pela API
-- alteração de status
-- persistência em banco
-- proteção de rotas autenticadas
+
+Validam fluxos HTTP da API com banco em memória, incluindo:
+
+- cadastro;
+- login;
+- endpoints protegidos;
+- criação e atualização de categorias;
+- criação, listagem, resumo, atualização de status e exclusão lógica de tarefas.
 
 ---
 
-## 14. Objetivo arquitetural
+## 15. Diretrizes de manutenção
 
-A arquitetura do TaskFlow deve ser simples o suficiente para permitir aprendizado e evolução contínua, mas robusta o bastante para servir como projeto de portfólio com estrutura profissional.
+- Manter regras de negócio fora dos controllers.
+- Não expor entidades de domínio diretamente nas respostas HTTP.
+- Usar DTOs para entrada e saída.
+- Manter validações importantes no back-end.
+- Evoluir o banco por migrations.
+- Registrar novos casos de uso na camada Application.
+- Registrar implementações técnicas na camada Infrastructure.
+- Manter endpoints protegidos sempre vinculados ao usuário autenticado.
+- Atualizar esta documentação quando houver mudanças reais na estrutura, no fluxo de autenticação, nos endpoints ou na infraestrutura.
