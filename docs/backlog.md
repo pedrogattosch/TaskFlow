@@ -2,11 +2,19 @@
 
 ## 1. Objetivo
 
-Este backlog organiza a construção do TaskFlow em entregas pequenas, claras e priorizadas, permitindo desenvolvimento incremental e uso eficiente do Codex no apoio à implementação.
+Este backlog registra o estado atual do TaskFlow e organiza as próximas entregas de forma incremental. Ele deve ser atualizado conforme funcionalidades, testes, documentação e infraestrutura forem concluídos.
 
 ---
 
-## 2. Prioridades
+## 2. Legenda de status
+
+- `[x]` Concluído
+- `[~]` Parcialmente concluído
+- `[ ]` Pendente
+
+---
+
+## 3. Prioridades
 
 - **Alta**: essencial para a versão 1.0
 - **Média**: importante, mas pode vir depois do núcleo principal
@@ -14,223 +22,242 @@ Este backlog organiza a construção do TaskFlow em entregas pequenas, claras e 
 
 ---
 
-## 3. Backlog por etapas
+## 4. Estado geral em 2026-04-29
+
+O TaskFlow já possui um fluxo funcional full stack com API ASP.NET Core, front-end React, autenticação JWT, persistência com EF Core/SQL Server, Docker Compose e testes automatizados.
+
+Funcionalidades já implementadas:
+
+- cadastro e login de usuários;
+- emissão e validação de JWT;
+- hash de senha com PBKDF2;
+- CRUD de categorias por usuário autenticado;
+- criação, listagem, atualização, mudança de status e exclusão lógica de tarefas;
+- filtros por status, prioridade e categoria;
+- ordenação por prazo e prioridade;
+- resumo de tarefas por status;
+- interface web protegida com login, cadastro, dashboard/listagem e criação/edição de tarefas;
+- visualização em lista e kanban com drag and drop para mudança de status;
+- tema claro/escuro;
+- execução local via Docker Compose com SQL Server, migrator, API, web e profile de testes;
+- testes unitários de domínio e aplicação;
+- testes de integração da API com `WebApplicationFactory` e SQLite em memória.
+
+Pontos ainda pendentes ou parciais:
+
+- endpoint dedicado de consulta de tarefa por id;
+- middleware global de exceções, já que o tratamento atual está nos controllers;
+- publicação em ambiente externo ou demonstração pública;
+- seed de dados;
+- testes automatizados do front-end.
+
+---
+
+## 5. Backlog por etapas
 
 ### Etapa 1 — Setup do projeto
 
 #### Alta
-- Criar repositório e estrutura inicial do projeto
-- Criar a solution .NET
-- Criar os projetos `TaskFlow.Domain`, `TaskFlow.Application`, `TaskFlow.Infrastructure`, `TaskFlow.CrossCutting` e `TaskFlow.API`
-- Criar os projetos de teste `TaskFlow.UnitTests` e `TaskFlow.IntegrationTests`
-- Criar o projeto React
-- Organizar estrutura de pastas
-- Adicionar `.gitignore`
-- Criar `README.md`
-- Adicionar pasta `docs/`
+- [x] Criar repositório e estrutura inicial do projeto
+- [x] Criar a solution .NET
+- [x] Criar os projetos `TaskFlow.Domain`, `TaskFlow.Application`, `TaskFlow.Infrastructure` e `TaskFlow.API`
+- [x] Criar os projetos de teste `TaskFlow.UnitTests` e `TaskFlow.IntegrationTests`
+- [x] Criar o projeto React
+- [x] Organizar estrutura de pastas
+- [x] Adicionar `.gitignore`
+- [x] Criar `README.md`
+- [x] Adicionar pasta `docs/`
 
 ---
 
 ### Etapa 2 — Domínio
 
 #### Alta
-- Criar entidade `User`
-- Criar entidade `Task`
-- Criar entidade `Category`
-- Criar enum `TaskStatus`
-- Criar enum `TaskPriority`
-- Criar regras de negócio das tarefas
-- Definir contratos principais do domínio
-- Criar exceções de domínio
+- [x] Criar entidade `User`
+- [x] Criar entidade `Task`
+- [x] Criar entidade `Category`
+- [x] Criar enum `TaskStatus`
+- [x] Criar enum `TaskPriority`
+- [x] Criar regras de negócio das tarefas
+- [x] Definir contratos principais do domínio
+- [x] Criar exceções de domínio
+- [x] Adicionar `AuditInfo`
 
 ---
 
 ### Etapa 3 — Application
 
 #### Alta
-- Criar DTOs de autenticação
-- Criar DTOs de tarefas
-- Criar DTOs de categorias
-- Criar casos de uso de cadastro
-- Criar casos de uso de login
-- Criar casos de uso de criação de tarefa
-- Criar casos de uso de edição de tarefa
-- Criar casos de uso de exclusão lógica
-- Criar casos de uso de listagem de tarefas
-- Criar casos de uso de alteração de status
-- Criar casos de uso de dashboard
-- Criar validações de entrada
+- [x] Criar DTOs de autenticação
+- [x] Criar DTOs de tarefas
+- [x] Criar DTOs de categorias
+- [x] Criar casos de uso de cadastro
+- [x] Criar casos de uso de login
+- [x] Criar casos de uso de criação de tarefa
+- [x] Criar casos de uso de edição de tarefa
+- [x] Criar casos de uso de exclusão lógica de tarefa
+- [x] Criar casos de uso de listagem de tarefas
+- [x] Criar casos de uso de alteração de status
+- [x] Criar casos de uso de dashboard/resumo
+- [x] Criar casos de uso de categorias
+- [x] Criar validações de entrada
 
 ---
 
 ### Etapa 4 — Infrastructure
 
 #### Alta
-- Configurar EF Core
-- Criar `DbContext`
-- Criar mapeamentos das entidades
-- Criar migrations iniciais
-- Configurar SQL Server
-- Implementar persistência de usuários
-- Implementar persistência de tarefas
-- Implementar persistência de categorias
-- Implementar geração de token JWT
-- Implementar hash de senha
+- [x] Configurar EF Core
+- [x] Criar `DbContext`
+- [x] Criar mapeamentos das entidades
+- [x] Criar migrations iniciais
+- [x] Configurar SQL Server
+- [x] Implementar persistência de usuários
+- [x] Implementar persistência de tarefas
+- [x] Implementar persistência de categorias
+- [x] Implementar `UnitOfWork`
+- [x] Implementar geração de token JWT
+- [x] Implementar validação de token JWT
+- [x] Implementar hash de senha
 
 ---
 
-### Etapa 5 — CrossCutting
-
-#### Média
-- Centralizar configuração de injeção de dependência
-- Organizar registro de serviços por módulo
-- Criar extensões compartilhadas de configuração
-- Definir local para políticas e componentes transversais
-- Evitar acoplamento indevido entre camadas
-
----
-
-### Etapa 6 — API
+### Etapa 5 — API
 
 #### Alta
-- Configurar dependência entre projetos
-- Configurar DI
-- Configurar Swagger
-- Criar endpoint de cadastro
-- Criar endpoint de login
-- Criar endpoint de criação de tarefa
-- Criar endpoint de consulta de tarefa por id
-- Criar endpoint de listagem de tarefas
-- Criar endpoint de edição de tarefa
-- Criar endpoint de alteração de status
-- Criar endpoint de exclusão lógica
-- Criar endpoint de categorias
-- Criar endpoint de dashboard
-- Implementar autenticação e autorização
-- Implementar middleware global de exceções
+- [x] Configurar dependência entre projetos
+- [x] Configurar DI
+- [x] Configurar Swagger
+- [x] Criar endpoint de cadastro
+- [x] Criar endpoint de login
+- [x] Criar endpoint de criação de tarefa
+- [ ] Criar endpoint de consulta de tarefa por id
+- [x] Criar endpoint de listagem de tarefas
+- [x] Criar endpoint de edição de tarefa
+- [x] Criar endpoint de alteração de status
+- [x] Criar endpoint de exclusão lógica de tarefa
+- [x] Criar endpoints de categorias
+- [x] Criar endpoint de dashboard/resumo
+- [x] Implementar autenticação e autorização por token Bearer
+- [~] Implementar tratamento padronizado de exceções
+- [ ] Implementar middleware global de exceções
+- [x] Implementar health check em `/health`
 
 ---
 
-### Etapa 7 — Front-end
+### Etapa 6 — Front-end
 
 #### Alta
-- Criar estrutura base do React
-- Criar página de login
-- Criar página de cadastro
-- Criar página de dashboard
-- Criar página de listagem de tarefas
-- Criar formulário de criação de tarefa
-- Criar formulário de edição de tarefa
-- Criar integração HTTP com a API
-- Criar tratamento visual de loading e erro
+- [x] Criar estrutura base do React
+- [x] Criar página de login
+- [x] Criar página de cadastro
+- [x] Criar página de dashboard/listagem de tarefas
+- [x] Criar página/formulário de criação de tarefa
+- [x] Criar formulário de edição de tarefa
+- [x] Criar integração HTTP com a API
+- [x] Criar tratamento visual de loading e erro
+- [x] Criar rotas públicas e protegidas
+- [x] Criar armazenamento local do token
+- [x] Criar gerenciamento de categorias pela interface
+- [x] Criar visualização em lista
+- [x] Criar visualização kanban com drag and drop
+- [x] Criar alternância de tema claro/escuro
 
 #### Média
-- Criar filtros por status
-- Criar filtros por prioridade
-- Criar filtros por categoria
-- Criar ordenação por prazo
-- Criar ordenação por prioridade
+- [x] Criar filtros por status
+- [x] Criar filtros por prioridade
+- [x] Criar filtros por categoria
+- [x] Criar ordenação por prazo
+- [x] Criar ordenação por prioridade
+- [~] Melhorar feedback visual do front-end
 
 ---
 
-### Etapa 8 — Testes
+### Etapa 7 — Testes
 
 #### Alta
-- Criar testes unitários das regras de negócio
-- Criar testes unitários dos casos de uso
-- Criar testes de integração da API
-- Validar fluxo completo de autenticação
-- Validar fluxo completo de criação e conclusão de tarefa
+- [x] Criar testes unitários das regras de negócio
+- [x] Criar testes unitários dos casos de uso
+- [x] Criar testes de integração da API
+- [x] Validar fluxo completo de autenticação
+- [x] Validar fluxo completo de criação, alteração de status e exclusão lógica de tarefa
+- [x] Validar fluxo de categorias
 
 #### Média
-- Adicionar cenários de erro e borda
-- Melhorar cobertura de testes críticos
-- Preparar massa de dados de apoio para testes
+- [x] Adicionar cenários de erro e borda no domínio, aplicação e API
+- [~] Melhorar cobertura de testes críticos
+- [ ] Preparar massa de dados de apoio para testes
+- [ ] Adicionar testes automatizados do front-end
 
 ---
 
-### Etapa 9 — Qualidade
+### Etapa 8 — Qualidade
 
 #### Média
-- Adicionar seed de dados
-- Refatorar nomes e responsabilidades
-- Melhorar feedback visual do front-end
-- Revisar consistência entre documentação e implementação
-- Revisar estrutura final do projeto
+- [ ] Adicionar seed de dados
+- [~] Refatorar nomes e responsabilidades
+- [~] Melhorar feedback visual do front-end
+- [x] Revisar consistência entre documentação e implementação
+- [x] Revisar estrutura final do projeto
+- [x] Documentar arquitetura atual
+- [x] Documentar execução local e Docker
 
 ---
 
-### Etapa 10 — Publicação
+### Etapa 9 — Publicação
 
 #### Média
-- Revisar documentação final
-- Ajustar README com instruções de execução
-- Preparar ambiente para deploy
-- Publicar aplicação
-- Publicar banco ou ambiente de demonstração
-- Adicionar projeto ao portfólio
+- [~] Revisar documentação final
+- [x] Ajustar README.md com instruções de execução
+- [x] Preparar ambiente local para deploy com Docker Compose
+- [ ] Preparar ambiente externo de deploy
+- [ ] Publicar aplicação
+- [ ] Publicar banco ou ambiente de demonstração
+- [ ] Adicionar projeto ao portfólio
 
 ---
 
-## 4. Backlog funcional resumido
+## 6. Backlog funcional resumido
 
 ### Alta prioridade
-- cadastro e login
-- CRUD de tarefas
-- alteração de status
-- filtros principais
-- dashboard resumido
+- [x] cadastro e login
+- [x] CRUD de tarefas
+- [x] alteração de status
+- [x] filtros principais
+- [x] dashboard resumido
+- [x] categorias
 
 ### Média prioridade
-- categorias
-- ordenação
-- testes de integração
-- melhorias de UX
-- centralização de componentes transversais
+- [x] ordenação
+- [x] testes de integração
+- [x] melhorias de UX iniciais
+- [x] centralização de componentes transversais por camada
+- [ ] consulta de tarefa por id
+- [ ] middleware global de exceções
+- [ ] seed de dados
 
 ### Baixa prioridade
-- tema claro e escuro
-- etiquetas múltiplas
-- subtarefas
-- comentários
-- compartilhamento
+- [x] tema claro e escuro
+- [ ] etiquetas múltiplas
+- [ ] subtarefas
+- [ ] comentários
+- [ ] compartilhamento
+- [ ] notificações
 
 ---
 
-## 5. Primeira ordem sugerida de implementação
-
-1. Estruturar repositório e solution
-2. Criar domínio
-3. Configurar banco e migrations
-4. Implementar autenticação
-5. Implementar CRUD de tarefas
-6. Implementar categorias
-7. Implementar dashboard
-8. Construir front-end
-9. Criar testes
-10. Publicar e documentar
-
----
-
-## 6. Definição de pronto
+## 7. Definição de pronto
 
 Uma entrega será considerada pronta quando:
 
-- o código estiver versionado
-- a funcionalidade estiver testável
-- não houver quebra do fluxo principal
-- a responsabilidade estiver na camada correta
-- houver clareza de nomes e organização
-- o comportamento esperado estiver implementado
-- o projeto continuar executável localmente
+- o código estiver versionado;
+- a funcionalidade estiver testável;
+- não houver quebra do fluxo principal;
+- a responsabilidade estiver na camada correta;
+- houver clareza de nomes e organização;
+- o comportamento esperado estiver implementado;
+- o projeto continuar executável localmente;
+- os testes relevantes passarem;
+- a documentação afetada estiver atualizada.
 
 ---
-
-## 7. Itens futuros
-
-- etiquetas múltiplas por tarefa
-- subtarefas
-- comentários e histórico completo
-- notificações por e-mail ou push
-- compartilhamento de tarefas entre usuários
-- tema claro e escuro
