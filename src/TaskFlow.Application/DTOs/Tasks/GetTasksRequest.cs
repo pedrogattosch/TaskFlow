@@ -5,6 +5,7 @@ namespace TaskFlow.Application.DTOs.Tasks;
 
 public sealed class GetTasksRequest
 {
+    public string? Title { get; init; }
     public TaskStatusEnum? Status { get; init; }
     public TaskPriorityEnum? Priority { get; init; }
     public Guid? CategoryId { get; init; }

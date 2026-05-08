@@ -7,6 +7,7 @@ export type TaskSortBy = 'dueDate' | 'priority';
 export type TaskSortDirection = 'asc' | 'desc';
 
 export type TaskQueryInput = {
+  title?: string;
   status?: TaskStatus;
   priority?: TaskPriority;
   categoryId?: string;

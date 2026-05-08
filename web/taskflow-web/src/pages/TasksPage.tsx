@@ -111,7 +111,9 @@ export function TasksPage() {
           editValues={editValues}
           errorMessage={errorMessage}
           filters={filters}
-          hasActiveFilters={Boolean(filters.status || filters.priority || filters.categoryId)}
+          hasActiveFilters={Boolean(
+            filters.title.trim() || filters.status || filters.priority || filters.categoryId,
+          )}
           isCreatingCategory={isCreatingCategory}
           isLoadingCategories={isLoadingCategories}
           isLoading={isLoading}

@@ -134,7 +134,7 @@ public class ApiEndpointTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(TaskStatusEnum.InProgress, started.Status);
 
         var filteredResponse = await _client.GetAsync(
-            $"/api/tasks?status={(int)TaskStatusEnum.InProgress}&priority={(int)TaskPriority.High}&categoryId={category.Id}&sortBy=priority&sortDirection=desc");
+            $"/api/tasks?title=backlog&status={(int)TaskStatusEnum.InProgress}&priority={(int)TaskPriority.High}&categoryId={category.Id}&sortBy=priority&sortDirection=desc");
 
         Assert.True(
             filteredResponse.StatusCode == HttpStatusCode.OK,

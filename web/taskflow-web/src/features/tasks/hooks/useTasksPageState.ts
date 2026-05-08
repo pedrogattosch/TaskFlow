@@ -173,6 +173,7 @@ export function useTasksPageState({
     filters.sortBy,
     filters.sortDirection,
     filters.status,
+    filters.title,
     logout,
   ]);
 
@@ -587,6 +588,7 @@ export function useTasksPageState({
 
   function handleClearFilters() {
     updateSearchParams({
+      title: '',
       status: '',
       priority: '',
       categoryId: '',
@@ -646,6 +648,10 @@ export function useTasksPageState({
 
   function updateSearchParams(nextFilters: TaskListFilters) {
     const nextParams = new URLSearchParams();
+
+    if (nextFilters.title.trim()) {
+      nextParams.set('title', nextFilters.title.trim());
+    }
 
     if (nextFilters.status) {
       nextParams.set('status', String(nextFilters.status));

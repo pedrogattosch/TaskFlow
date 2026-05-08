@@ -129,6 +129,25 @@ public class TaskUseCaseTests
     }
 
     [Fact]
+    public async Task GetTasks_ShouldFilterByTitle()
+    {
+        var context = await CreateContextAsync();
+        await context.Tasks.AddAsync(new DomainTask(context.User.Id, "Revisar backlog", null, TaskPriority.High));
+        await context.Tasks.AddAsync(new DomainTask(context.User.Id, "Planejar sprint", null, TaskPriority.Medium));
+        var useCase = new GetTasksUseCase(context.Users, context.Tasks, context.Categories);
+
+        var response = await useCase.ExecuteAsync(
+            context.User.Id,
+            new GetTasksRequest
+            {
+                Title = "backlog"
+            });
+
+        Assert.Single(response);
+        Assert.Equal("Revisar backlog", response[0].Title);
+    }
+
+    [Fact]
     public async Task GetTasks_ShouldThrowValidation_WhenSortByIsInvalid()
     {
         var context = await CreateContextAsync();

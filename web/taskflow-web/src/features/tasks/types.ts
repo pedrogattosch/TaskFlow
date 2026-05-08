@@ -56,6 +56,7 @@ export type TaskEditValues = {
 export type TaskEditErrors = Partial<Record<keyof TaskEditValues, string>>;
 
 export type TaskListFilters = {
+  title: string;
   status: TaskStatus | '';
   priority: TaskPriority | '';
   categoryId: string;

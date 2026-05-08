@@ -31,6 +31,12 @@ public sealed class TaskRepository : ITaskRepository
             .AsNoTracking()
             .Where(task => task.UserId == userId && !task.IsDeleted);
 
+        if (!string.IsNullOrWhiteSpace(filter.Title))
+        {
+            var normalizedTitle = filter.Title.ToLowerInvariant();
+            query = query.Where(task => task.Title.ToLower().Contains(normalizedTitle));
+        }
+
         if (filter.Status.HasValue)
             query = query.Where(task => task.Status == filter.Status.Value);
 

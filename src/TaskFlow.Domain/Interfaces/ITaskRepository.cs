@@ -16,6 +16,7 @@ public interface ITaskRepository
 }
 
 public sealed record TaskFilter(
+    string? Title,
     TaskFlow.Domain.Enums.TaskStatus? Status,
     TaskFlow.Domain.Enums.TaskPriority? Priority,
     Guid? CategoryId,

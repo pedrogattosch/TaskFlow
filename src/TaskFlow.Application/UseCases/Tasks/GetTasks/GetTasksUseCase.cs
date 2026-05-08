@@ -66,11 +66,20 @@ public sealed class GetTasksUseCase : IGetTasksUseCase
             throw new ApplicationValidationException("A prioridade informada para filtro Ã© invÃ¡lida.");
 
         return new TaskFilter(
+            NormalizeTitle(request.Title),
             request.Status,
             request.Priority,
             request.CategoryId,
             ParseSortBy(request.SortBy),
             ParseSortDirection(request.SortDirection));
+    }
+
+    private static string? NormalizeTitle(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        return value.Trim();
     }
 
     private static TaskSortBy ParseSortBy(string? value)

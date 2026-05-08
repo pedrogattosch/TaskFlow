@@ -104,6 +104,9 @@ internal sealed class InMemoryTaskRepository : ITaskRepository
     {
         IEnumerable<DomainTask> query = _tasks.Where(task => task.UserId == userId && !task.IsDeleted);
 
+        if (!string.IsNullOrWhiteSpace(filter.Title))
+            query = query.Where(task => task.Title.Contains(filter.Title, StringComparison.OrdinalIgnoreCase));
+
         if (filter.Status.HasValue)
             query = query.Where(task => task.Status == filter.Status.Value);
 

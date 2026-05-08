@@ -177,6 +177,7 @@ export function mergeCreatedTask(
 
 export function getFiltersFromSearchParams(searchParams: URLSearchParams): TaskListFilters {
   return {
+    title: searchParams.get('title') ?? '',
     status: parseStatus(searchParams.get('status')),
     priority: parsePriority(searchParams.get('priority')),
     categoryId: searchParams.get('categoryId') ?? '',
@@ -187,6 +188,7 @@ export function getFiltersFromSearchParams(searchParams: URLSearchParams): TaskL
 
 export function toTaskQueryInput(filters: TaskListFilters) {
   return {
+    title: filters.title.trim() || undefined,
     status: filters.status || undefined,
     priority: filters.priority || undefined,
     categoryId: filters.categoryId || undefined,
@@ -196,6 +198,10 @@ export function toTaskQueryInput(filters: TaskListFilters) {
 }
 
 export function taskMatchesFilters(task: TaskListItem, filters: TaskListFilters) {
+  if (filters.title.trim() && !task.title.toLowerCase().includes(filters.title.trim().toLowerCase())) {
+    return false;
+  }
+
   if (filters.status && task.status !== filters.status) {
     return false;
   }

@@ -222,96 +222,118 @@ export function TaskFiltersPanel({
   onClear,
   onSortChange,
 }: TaskFiltersPanelProps) {
-  const hasActiveFilters = Boolean(filters.status || filters.priority || filters.categoryId);
+  const hasActiveFilters = Boolean(
+    filters.title.trim() || filters.status || filters.priority || filters.categoryId,
+  );
   const sortValue = `${filters.sortBy}:${filters.sortDirection}`;
 
   return (
-    <section className="tasks-filter-panel" aria-labelledby="tasks-filter-title">
-      <div className="tasks-filter-panel__header">
-        <div>
-          <h2 id="tasks-filter-title">Filtros e ordenação</h2>
+    <>
+      <section className="tasks-search-panel" aria-labelledby="tasks-search-title">
+        <div className="tasks-search-panel__header">
+          <h2 id="tasks-search-title">Pesquisa de tarefas</h2>
         </div>
 
-        <Button
-          className="task-card__action"
-          type="button"
-          variant="secondary"
-          icon={<TaskIcon name="x" />}
-          onClick={onClear}
-          disabled={isLoading || !hasActiveFilters}
-        >
-          Limpar filtros
-        </Button>
-      </div>
-
-      <div className="tasks-filter-panel__grid">
-        <label className="tasks-filter-panel__field">
-          <span>Status</span>
-          <select
-            value={filters.status}
-            onChange={(event) => onChange('status', event.target.value)}
-            disabled={isLoading}
-          >
-            <option value="">Todos</option>
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+        <label className="tasks-search-panel__field">
+          <span className="tasks-search-panel__input">
+            <TaskIcon name="search" />
+            <input
+              type="search"
+              value={filters.title}
+              placeholder="Digite parte do título"
+              onChange={(event) => onChange('title', event.target.value)}
+            />
+          </span>
         </label>
+      </section>
 
-        <label className="tasks-filter-panel__field">
-          <span>Prioridade</span>
-          <select
-            value={filters.priority}
-            onChange={(event) => onChange('priority', event.target.value)}
-            disabled={isLoading}
-          >
-            <option value="">Todas</option>
-            {priorityOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+      <section className="tasks-filter-panel" aria-labelledby="tasks-filter-title">
+        <div className="tasks-filter-panel__header">
+          <div>
+            <h2 id="tasks-filter-title">Filtros e ordenação</h2>
+          </div>
 
-        <label className="tasks-filter-panel__field">
-          <span>Categoria</span>
-          <select
-            value={filters.categoryId}
-            onChange={(event) => onChange('categoryId', event.target.value)}
-            disabled={isLoading || categories.length === 0}
+          <Button
+            className="task-card__action"
+            type="button"
+            variant="secondary"
+            icon={<TaskIcon name="x" />}
+            onClick={onClear}
+            disabled={isLoading || !hasActiveFilters}
           >
-            <option value="">Todas</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            Limpar filtros
+          </Button>
+        </div>
 
-        <label className="tasks-filter-panel__field">
-          <span>Ordenar por</span>
-          <select
-            value={sortValue}
-            onChange={(event) => onSortChange(event.target.value)}
-            disabled={isLoading}
-          >
-            {sortOptions.map((option) => (
-              <option
-                key={`${option.sortBy}:${option.sortDirection}`}
-                value={`${option.sortBy}:${option.sortDirection}`}
-              >
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-    </section>
+        <div className="tasks-filter-panel__grid">
+          <label className="tasks-filter-panel__field">
+            <span>Status</span>
+            <select
+              value={filters.status}
+              onChange={(event) => onChange('status', event.target.value)}
+              disabled={isLoading}
+            >
+              <option value="">Todos</option>
+              {statusOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="tasks-filter-panel__field">
+            <span>Prioridade</span>
+            <select
+              value={filters.priority}
+              onChange={(event) => onChange('priority', event.target.value)}
+              disabled={isLoading}
+            >
+              <option value="">Todas</option>
+              {priorityOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="tasks-filter-panel__field">
+            <span>Categoria</span>
+            <select
+              value={filters.categoryId}
+              onChange={(event) => onChange('categoryId', event.target.value)}
+              disabled={isLoading || categories.length === 0}
+            >
+              <option value="">Todas</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="tasks-filter-panel__field">
+            <span>Ordenar por</span>
+            <select
+              value={sortValue}
+              onChange={(event) => onSortChange(event.target.value)}
+              disabled={isLoading}
+            >
+              {sortOptions.map((option) => (
+                <option
+                  key={`${option.sortBy}:${option.sortDirection}`}
+                  value={`${option.sortBy}:${option.sortDirection}`}
+                >
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </section>
+    </>
   );
 }
 

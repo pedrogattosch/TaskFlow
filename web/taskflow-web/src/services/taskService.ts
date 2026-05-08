@@ -45,6 +45,10 @@ export const taskService = {
 function buildTasksPath(query: TaskQueryInput) {
   const params = new URLSearchParams();
 
+  if (query.title) {
+    params.set('title', query.title);
+  }
+
   if (query.status) {
     params.set('status', String(query.status));
   }

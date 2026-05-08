@@ -496,6 +496,7 @@ button:disabled {
 
 .login-form__field,
 .task-form__field,
+.tasks-search-panel__field,
 .tasks-filter-panel__field {
   display: grid;
   gap: 8px;
@@ -503,6 +504,7 @@ button:disabled {
 
 .login-form__field label,
 .task-form__field label,
+.tasks-search-panel__field span,
 .tasks-filter-panel__field span {
   color: var(--color-label);
   font-size: 0.93rem;
@@ -513,6 +515,8 @@ button:disabled {
 .task-form__field input,
 .task-form__field select,
 .task-form__field textarea,
+.tasks-search-panel__field input,
+.tasks-filter-panel__field input,
 .tasks-filter-panel__field select {
   width: 100%;
   min-height: 48px;
@@ -528,6 +532,8 @@ button:disabled {
 .task-form__field input:hover:not(:disabled),
 .task-form__field select:hover:not(:disabled),
 .task-form__field textarea:hover:not(:disabled),
+.tasks-search-panel__field input:hover:not(:disabled),
+.tasks-filter-panel__field input:hover:not(:disabled),
 .tasks-filter-panel__field select:hover:not(:disabled) {
   border-color: var(--color-hover-border);
 }
@@ -536,6 +542,8 @@ button:disabled {
 .task-form__field input:focus,
 .task-form__field select:focus,
 .task-form__field textarea:focus,
+.tasks-search-panel__field input:focus,
+.tasks-filter-panel__field input:focus,
 .tasks-filter-panel__field select:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 4px var(--color-focus-shadow);
@@ -545,6 +553,8 @@ button:disabled {
 .task-form__field input:disabled,
 .task-form__field select:disabled,
 .task-form__field textarea:disabled,
+.tasks-search-panel__field input:disabled,
+.tasks-filter-panel__field input:disabled,
 .tasks-filter-panel__field select:disabled {
   cursor: not-allowed;
   color: var(--color-input-disabled-text);
@@ -730,6 +740,7 @@ button:disabled {
 .tasks-page__state,
 .categories-panel,
 .task-summary-panel,
+.tasks-search-panel,
 .tasks-filter-panel,
 .task-card,
 .task-form-page__header,
@@ -777,6 +788,8 @@ button:disabled {
 .task-summary-panel h2,
 .task-summary-panel p,
 .task-summary-panel dl,
+.tasks-search-panel h2,
+.tasks-search-panel p,
 .tasks-filter-panel h2,
 .tasks-filter-panel p {
   margin: 0;
@@ -784,6 +797,7 @@ button:disabled {
 
 .categories-panel h2,
 .task-summary-panel h2,
+.tasks-search-panel h2,
 .tasks-filter-panel h2 {
   color: var(--color-heading);
   font-size: 1rem;
@@ -939,6 +953,7 @@ button:disabled {
 }
 
 .task-summary-panel,
+.tasks-search-panel,
 .tasks-filter-panel {
   display: grid;
   gap: 18px;
@@ -946,6 +961,7 @@ button:disabled {
 }
 
 .task-summary-panel__header,
+.tasks-search-panel__header,
 .tasks-filter-panel__header {
   display: flex;
   gap: 18px;
@@ -954,6 +970,7 @@ button:disabled {
 }
 
 .task-summary-panel p,
+.tasks-search-panel p,
 .tasks-filter-panel p {
   margin-top: 6px;
   color: var(--color-muted);
@@ -1005,6 +1022,26 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+}
+
+.tasks-search-panel__input {
+  position: relative;
+  display: block;
+}
+
+.tasks-search-panel__input .icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  width: 1rem;
+  height: 1rem;
+  color: var(--color-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.tasks-search-panel__input input {
+  padding-left: 42px;
 }
 
 .task-view-selector {
@@ -1654,6 +1691,7 @@ button:disabled {
   .dashboard-page__panel,
   .tasks-page__header,
   .task-summary-panel,
+  .tasks-search-panel,
   .tasks-filter-panel,
   .categories-panel,
   .task-card,
@@ -1663,6 +1701,7 @@ button:disabled {
   }
 
   .task-summary-panel__header,
+  .tasks-search-panel__header,
   .tasks-filter-panel__header,
   .categories-panel__header,
   .task-view-selector,
