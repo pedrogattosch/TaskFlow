@@ -66,7 +66,7 @@ export function RegisterForm({ errorMessage, isLoading, onSubmit }: RegisterForm
       </div>
 
       <div className="login-form__field">
-        <label htmlFor="email">Email</label>
+        <label htmlFor="email">E-mail</label>
         <input
           id="email"
           name="email"

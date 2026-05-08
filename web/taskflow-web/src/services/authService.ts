@@ -4,6 +4,7 @@ import type { AuthResponse, LoginCredentials, RegisterCredentials } from '../typ
 type LoginRequest = {
   email: string;
   password: string;
+  rememberMe: boolean;
 };
 
 type RegisterRequest = {
@@ -17,6 +18,7 @@ export const authService = {
     return postJson<AuthResponse, LoginRequest>('/auth/login', {
       email: credentials.email,
       password: credentials.password,
+      rememberMe: credentials.rememberMe,
     });
   },
 

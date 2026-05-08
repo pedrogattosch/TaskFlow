@@ -5,4 +5,5 @@ namespace TaskFlow.Application.Interfaces.Auth;
 public interface IJwtTokenGenerator
 {
     JwtToken Generate(User user);
+    JwtToken Generate(User user, int expirationMinutes);
 }

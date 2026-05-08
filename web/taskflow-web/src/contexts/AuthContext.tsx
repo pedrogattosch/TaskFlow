@@ -25,7 +25,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isAuthenticated: Boolean(session),
       async login(credentials) {
         const auth = await authService.login(credentials);
-        authTokenStorage.saveSession(auth);
+        authTokenStorage.saveSession(auth, credentials.rememberMe);
         setSession(auth);
       },
       logout() {

@@ -20,10 +20,18 @@ public sealed class HmacJwtTokenGenerator : IJwtTokenGenerator
 
     public JwtToken Generate(User user)
     {
+        return Generate(user, _options.ExpirationMinutes);
+    }
+
+    public JwtToken Generate(User user, int expirationMinutes)
+    {
         ValidateOptions();
 
+        if (expirationMinutes <= 0)
+            throw new ArgumentOutOfRangeException(nameof(expirationMinutes), "A expiração do token deve ser maior que zero.");
+
         var now = DateTime.UtcNow;
-        var expiresAt = now.AddMinutes(_options.ExpirationMinutes);
+        var expiresAt = now.AddMinutes(expirationMinutes);
 
         var header = new Dictionary<string, object>
         {

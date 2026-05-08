@@ -481,14 +481,6 @@ button:disabled {
   box-shadow: var(--shadow-lg);
 }
 
-.login-form::before {
-  content: "";
-  display: block;
-  width: 56px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--color-primary);
-}
 
 .login-form__error,
 .task-form__error,
@@ -571,6 +563,29 @@ button:disabled {
   color: var(--color-danger-strong);
   font-size: 0.875rem;
   line-height: 1.45;
+}
+
+.login-form__remember {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--color-label);
+  font-size: 0.93rem;
+  font-weight: 760;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.login-form__remember input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  accent-color: var(--color-primary);
+}
+
+.login-form__remember:has(input:disabled) {
+  cursor: wait;
+  opacity: 0.68;
 }
 
 .login-form__submit {

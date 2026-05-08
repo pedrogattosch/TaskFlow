@@ -16,6 +16,7 @@ export function LoginForm({ errorMessage, isLoading, onSubmit }: LoginFormProps)
   const [values, setValues] = useState<LoginCredentials>({
     email: '',
     password: '',
+    rememberMe: false,
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -41,7 +42,7 @@ export function LoginForm({ errorMessage, isLoading, onSubmit }: LoginFormProps)
       )}
 
       <div className="login-form__field">
-        <label htmlFor="email">Email</label>
+        <label htmlFor="email">E-mail</label>
         <input
           id="email"
           name="email"
@@ -83,6 +84,19 @@ export function LoginForm({ errorMessage, isLoading, onSubmit }: LoginFormProps)
           </span>
         )}
       </div>
+
+      <label className="login-form__remember">
+        <input
+          name="rememberMe"
+          type="checkbox"
+          checked={values.rememberMe}
+          onChange={(event) => {
+            setValues((current) => ({ ...current, rememberMe: event.target.checked }));
+          }}
+          disabled={isLoading}
+        />
+        <span>Manter conectado neste dispositivo</span>
+      </label>
 
       <Button className="login-form__submit" type="submit" variant="primary" disabled={isLoading}>
         {isLoading ? 'Entrando...' : 'Entrar'}

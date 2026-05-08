@@ -80,6 +80,24 @@ public class AuthUseCaseTests
     }
 
     [Fact]
+    public async Task Login_ShouldReturnLongerToken_WhenRememberMeIsEnabled()
+    {
+        var users = new InMemoryUserRepository();
+        await users.AddAsync(new User("Pedro", "pedro@example.com", "hashed:ChangeMe123"));
+        var useCase = new LoginUserUseCase(
+            users,
+            new TestPasswordHasher(),
+            new TestJwtTokenGenerator());
+
+        var response = await useCase.ExecuteAsync(new LoginUserRequest(
+            "pedro@example.com",
+            "ChangeMe123",
+            true));
+
+        Assert.True(response.ExpiresAt > DateTime.UtcNow.AddDays(29));
+    }
+
+    [Fact]
     public async Task Login_ShouldThrowUnauthorized_WhenPasswordIsInvalid()
     {
         var users = new InMemoryUserRepository();

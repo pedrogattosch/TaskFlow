@@ -186,4 +186,9 @@ internal sealed class TestJwtTokenGenerator : IJwtTokenGenerator
     {
         return new JwtToken($"token:{user.Id}", DateTime.UtcNow.AddHours(1));
     }
+
+    public JwtToken Generate(User user, int expirationMinutes)
+    {
+        return new JwtToken($"token:{user.Id}", DateTime.UtcNow.AddMinutes(expirationMinutes));
+    }
 }

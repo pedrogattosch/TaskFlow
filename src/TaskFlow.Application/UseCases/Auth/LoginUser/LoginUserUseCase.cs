@@ -7,6 +7,7 @@ namespace TaskFlow.Application.UseCases.Auth.LoginUser;
 
 public sealed class LoginUserUseCase : ILoginUserUseCase
 {
+    private const int RememberMeExpirationMinutes = 60 * 24 * 30;
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
@@ -33,7 +34,9 @@ public sealed class LoginUserUseCase : ILoginUserUseCase
         if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
             throw new ApplicationUnauthorizedException("E-mail ou senha inválidos.");
 
-        var token = _jwtTokenGenerator.Generate(user);
+        var token = request.RememberMe
+            ? _jwtTokenGenerator.Generate(user, RememberMeExpirationMinutes)
+            : _jwtTokenGenerator.Generate(user);
 
         return new AuthResponse(
             user.Id,
