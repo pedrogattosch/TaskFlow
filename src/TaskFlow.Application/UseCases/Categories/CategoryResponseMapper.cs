@@ -10,6 +10,7 @@ internal static class CategoryResponseMapper
         return new CategoryResponse(
             category.Id,
             category.Name,
-            category.Color);
+            category.Color,
+            category.Emoji);
     }
 }

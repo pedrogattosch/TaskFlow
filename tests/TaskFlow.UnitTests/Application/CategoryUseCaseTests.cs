@@ -3,6 +3,7 @@ using TaskFlow.Application.Exceptions;
 using TaskFlow.Application.UseCases.Categories.CreateCategory;
 using TaskFlow.Application.UseCases.Categories.DeleteCategory;
 using TaskFlow.Application.UseCases.Categories.GetCategories;
+using TaskFlow.Application.UseCases.Categories.UpdateCategory;
 using TaskFlow.Domain.Entities;
 using Task = System.Threading.Tasks.Task;
 
@@ -28,6 +29,29 @@ public class CategoryUseCaseTests
         Assert.Equal("Trabalho", response.Name);
         Assert.Equal("#336699", response.Color);
         Assert.Single(categories.Categories);
+        Assert.Equal(1, unitOfWork.SaveChangesCalls);
+    }
+
+    [Fact]
+    public async Task CreateCategory_ShouldCreateCategoryWithEmoji_WhenEmojiIsProvided()
+    {
+        var user = new User("Pedro", "pedro@example.com", "hash");
+        var users = new InMemoryUserRepository();
+        var categories = new InMemoryCategoryRepository();
+        var unitOfWork = new CountingUnitOfWork();
+        await users.AddAsync(user);
+
+        var useCase = new CreateCategoryUseCase(users, categories, unitOfWork);
+
+        var response = await useCase.ExecuteAsync(
+            user.Id,
+            new CreateCategoryRequest("Pessoal", "#7c3aed", " 📌 "));
+
+        Assert.Equal("Pessoal", response.Name);
+        Assert.Equal("#7c3aed", response.Color);
+        Assert.Equal("📌", response.Emoji);
+        Assert.Single(categories.Categories);
+        Assert.Equal("📌", categories.Categories[0].Emoji);
         Assert.Equal(1, unitOfWork.SaveChangesCalls);
     }
 
@@ -76,6 +100,29 @@ public class CategoryUseCaseTests
 
         Assert.Single(response);
         Assert.Equal("Trabalho", response[0].Name);
+    }
+
+    [Fact]
+    public async Task UpdateCategory_ShouldUpdateEmoji_WhenEmojiIsProvided()
+    {
+        var user = new User("Pedro", "pedro@example.com", "hash");
+        var users = new InMemoryUserRepository();
+        var categories = new InMemoryCategoryRepository();
+        var unitOfWork = new CountingUnitOfWork();
+        var category = new Category(user.Id, "Pessoal", "#7c3aed");
+        await users.AddAsync(user);
+        await categories.AddAsync(category);
+
+        var useCase = new UpdateCategoryUseCase(users, categories, unitOfWork);
+
+        var response = await useCase.ExecuteAsync(
+            user.Id,
+            category.Id,
+            new UpdateCategoryRequest("Pessoal", "#7c3aed", "📌"));
+
+        Assert.Equal("📌", response.Emoji);
+        Assert.Equal("📌", categories.Categories[0].Emoji);
+        Assert.Equal(1, unitOfWork.SaveChangesCalls);
     }
 
     [Fact]

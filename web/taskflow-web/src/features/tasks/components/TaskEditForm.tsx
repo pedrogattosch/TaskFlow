@@ -2,6 +2,7 @@ import { Button } from '../../../components/Button';
 import type { TaskEditFormProps } from '../types';
 import { priorityOptions } from '../constants';
 import { CategoryColorInput } from './CategoryColorInput';
+import { CategoryEmojiPicker } from './CategoryEmojiPicker';
 import { TaskIcon } from './TaskIcon';
 
 export function TaskEditForm({
@@ -12,11 +13,13 @@ export function TaskEditForm({
   isLoadingCategories,
   isLoading,
   newCategoryColor,
+  newCategoryEmoji,
   newCategoryName,
   onCancel,
   onChange,
   onCreateCategory,
   onNewCategoryColorChange,
+  onNewCategoryEmojiChange,
   onNewCategoryNameChange,
   onSubmit,
   taskId,
@@ -134,7 +137,7 @@ export function TaskEditForm({
           </option>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
-              {category.name}
+              {category.emoji ? `${category.emoji} ${category.name}` : category.name}
             </option>
           ))}
         </select>
@@ -152,6 +155,13 @@ export function TaskEditForm({
           </span>
         )}
         <div className="task-form__inline-action">
+          <CategoryEmojiPicker
+            className="task-form__emoji-picker"
+            value={newCategoryEmoji}
+            disabled={isLoading || isCreatingCategory}
+            ariaLabel="Emoji da nova categoria"
+            onChange={onNewCategoryEmojiChange}
+          />
           <input
             type="text"
             maxLength={80}

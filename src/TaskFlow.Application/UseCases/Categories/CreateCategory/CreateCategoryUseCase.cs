@@ -39,7 +39,7 @@ public sealed class CreateCategoryUseCase : ICreateCategoryUseCase
         if (existingCategory is not null)
             throw new ApplicationConflictException("Já existe uma categoria com esse nome.");
 
-        var category = new CategoryEntity(userId, normalizedName, request.Color);
+        var category = new CategoryEntity(userId, normalizedName, request.Color, request.Emoji);
 
         await _categoryRepository.AddAsync(category, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -68,5 +68,8 @@ public sealed class CreateCategoryUseCase : ICreateCategoryUseCase
 
         if (!string.IsNullOrWhiteSpace(request.Color) && request.Color.Trim().Length > 20)
             throw new ApplicationValidationException("A cor da categoria deve ter no máximo 20 caracteres.");
+
+        if (!string.IsNullOrWhiteSpace(request.Emoji) && request.Emoji.Trim().Length > 16)
+            throw new ApplicationValidationException("O emoji da categoria deve ter no máximo 16 caracteres.");
     }
 }

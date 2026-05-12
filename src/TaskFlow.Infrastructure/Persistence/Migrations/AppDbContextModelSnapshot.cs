@@ -31,6 +31,10 @@ namespace TaskFlow.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("Emoji")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(80)

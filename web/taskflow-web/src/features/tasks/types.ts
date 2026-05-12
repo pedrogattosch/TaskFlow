@@ -78,6 +78,7 @@ export type CategorySummaryProps = {
   isLoading: boolean;
   onDeleteCategory: (category: CategoryListItem) => void;
   onUpdateCategoryColor: (category: CategoryListItem, color: string) => void;
+  onUpdateCategoryEmoji: (category: CategoryListItem, emoji: string) => void;
   onUpdateCategoryName: (category: CategoryListItem, name: string) => void;
   updatingCategoryId: string | null;
 };
@@ -111,11 +112,13 @@ export type TaskEditFormProps = {
   isLoadingCategories: boolean;
   isLoading: boolean;
   newCategoryColor: string;
+  newCategoryEmoji: string;
   newCategoryName: string;
   onCancel: () => void;
   onChange: (name: keyof TaskEditValues, value: string) => void;
   onCreateCategory: () => void;
   onNewCategoryColorChange: (color: string) => void;
+  onNewCategoryEmojiChange: (emoji: string) => void;
   onNewCategoryNameChange: (name: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   taskId: string;
@@ -132,6 +135,7 @@ export type TaskCardProps = {
   isCreatingCategory: boolean;
   isLoadingCategories: boolean;
   newCategoryColor: string;
+  newCategoryEmoji: string;
   newCategoryName: string;
   onCancelEdit: () => void;
   onChangeEditValue: (name: keyof TaskEditValues, value: string) => void;
@@ -143,6 +147,7 @@ export type TaskCardProps = {
   ) => void;
   onDeleteTask: (taskId: string) => void;
   onNewCategoryColorChange: (color: string) => void;
+  onNewCategoryEmojiChange: (emoji: string) => void;
   onNewCategoryNameChange: (name: string) => void;
   onStartEdit: (task: TaskListItem) => void;
   onTaskDragEnd: () => void;
@@ -170,6 +175,7 @@ export type TaskListContentProps = {
   isLoadingCategories: boolean;
   isLoading: boolean;
   newCategoryColor: string;
+  newCategoryEmoji: string;
   newCategoryName: string;
   onCancelEdit: () => void;
   onChangeEditValue: (name: keyof TaskEditValues, value: string) => void;
@@ -183,6 +189,7 @@ export type TaskListContentProps = {
   onKanbanColumnDragOver: (event: DragEvent<HTMLElement>, status: TaskStatus) => void;
   onKanbanColumnDrop: (event: DragEvent<HTMLElement>, status: TaskStatus) => void;
   onNewCategoryColorChange: (color: string) => void;
+  onNewCategoryEmojiChange: (emoji: string) => void;
   onNewCategoryNameChange: (name: string) => void;
   onStartEdit: (task: TaskListItem) => void;
   onTaskDragEnd: () => void;

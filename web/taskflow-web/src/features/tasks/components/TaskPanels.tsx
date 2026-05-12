@@ -8,6 +8,7 @@ import type {
   TaskViewSelectorProps,
 } from '../types';
 import { CategoryColorInput } from './CategoryColorInput';
+import { CategoryEmojiPicker } from './CategoryEmojiPicker';
 import { TaskIcon } from './TaskIcon';
 import { categoryColorStyle } from '../utils';
 
@@ -16,6 +17,7 @@ function CategorySummaryItem({
   deletingCategoryId,
   onDeleteCategory,
   onUpdateCategoryColor,
+  onUpdateCategoryEmoji,
   onUpdateCategoryName,
   updatingCategoryId,
 }: {
@@ -23,15 +25,21 @@ function CategorySummaryItem({
   deletingCategoryId: string | null;
   onDeleteCategory: CategorySummaryProps['onDeleteCategory'];
   onUpdateCategoryColor: CategorySummaryProps['onUpdateCategoryColor'];
+  onUpdateCategoryEmoji: CategorySummaryProps['onUpdateCategoryEmoji'];
   onUpdateCategoryName: CategorySummaryProps['onUpdateCategoryName'];
   updatingCategoryId: string | null;
 }) {
   const [draftName, setDraftName] = useState(category.name);
+  const [draftEmoji, setDraftEmoji] = useState(category.emoji ?? '');
   const isBusy = updatingCategoryId === category.id || deletingCategoryId === category.id;
 
   useEffect(() => {
     setDraftName(category.name);
   }, [category.name]);
+
+  useEffect(() => {
+    setDraftEmoji(category.emoji ?? '');
+  }, [category.emoji]);
 
   function commitNameChange() {
     const normalizedName = draftName.trim();
@@ -61,6 +69,16 @@ function CategorySummaryItem({
   return (
     <li style={categoryColorStyle(category.color)}>
       <span className="categories-panel__swatch" aria-hidden="true" />
+      <CategoryEmojiPicker
+        className="categories-panel__emoji-picker"
+        value={draftEmoji}
+        ariaLabel={`Emoji da categoria ${category.name}`}
+        disabled={isBusy}
+        onChange={(emoji) => {
+          setDraftEmoji(emoji);
+          onUpdateCategoryEmoji(category, emoji);
+        }}
+      />
       <input
         className="categories-panel__name-input"
         type="text"
@@ -107,6 +125,7 @@ export function CategorySummary({
   isLoading,
   onDeleteCategory,
   onUpdateCategoryColor,
+  onUpdateCategoryEmoji,
   onUpdateCategoryName,
   updatingCategoryId,
 }: CategorySummaryProps) {
@@ -151,6 +170,7 @@ export function CategorySummary({
             deletingCategoryId={deletingCategoryId}
             onDeleteCategory={onDeleteCategory}
             onUpdateCategoryColor={onUpdateCategoryColor}
+            onUpdateCategoryEmoji={onUpdateCategoryEmoji}
             onUpdateCategoryName={onUpdateCategoryName}
             updatingCategoryId={updatingCategoryId}
           />
@@ -308,7 +328,7 @@ export function TaskFiltersPanel({
               <option value="">Todas</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
-                  {category.name}
+                  {category.emoji ? `${category.emoji} ${category.name}` : category.name}
                 </option>
               ))}
             </select>

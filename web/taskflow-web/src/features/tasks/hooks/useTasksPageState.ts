@@ -71,6 +71,7 @@ export function useTasksPageState({
   const [editErrors, setEditErrors] = useState<TaskEditErrors>({});
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState(defaultCategoryColor);
+  const [newCategoryEmoji, setNewCategoryEmoji] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
   const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(null);
@@ -379,6 +380,11 @@ export function useTasksPageState({
       return;
     }
 
+    if (newCategoryEmoji.trim().length > 16) {
+      setCategoryErrorMessage('Use no máximo 16 caracteres no emoji da categoria.');
+      return;
+    }
+
     try {
       setIsCreatingCategory(true);
       setCategoryErrorMessage(null);
@@ -386,12 +392,14 @@ export function useTasksPageState({
       const createdCategory = await categoryService.createCategory(accessToken, {
         name: normalizedName,
         color: newCategoryColor,
+        emoji: newCategoryEmoji.trim() || null,
       });
 
       setCategories((current) => addOrReplaceCategory(current, createdCategory));
       setEditValues((current) => current ? { ...current, categoryId: createdCategory.id } : current);
       setNewCategoryName('');
       setNewCategoryColor(defaultCategoryColor);
+      setNewCategoryEmoji('');
       setEditErrors((current) => ({ ...current, categoryId: undefined }));
     } catch (error) {
       if (error instanceof HttpClientError && error.status === 401) {
@@ -419,6 +427,7 @@ export function useTasksPageState({
       const updatedCategory = await categoryService.updateCategory(accessToken, category.id, {
         name: category.name,
         color,
+        emoji: category.emoji,
       });
 
       setCategories((current) => addOrReplaceCategory(current, updatedCategory));
@@ -461,6 +470,7 @@ export function useTasksPageState({
       const updatedCategory = await categoryService.updateCategory(accessToken, category.id, {
         name: normalizedName,
         color: category.color,
+        emoji: category.emoji,
       });
 
       setCategories((current) => addOrReplaceCategory(current, updatedCategory));
@@ -479,6 +489,42 @@ export function useTasksPageState({
 
       setCategoryActionErrorMessage(
         error instanceof Error ? error.message : 'Não foi possível atualizar a categoria.',
+      );
+    } finally {
+      setUpdatingCategoryId(null);
+    }
+  }
+
+  async function handleUpdateCategoryEmoji(category: CategoryListItem, emoji: string) {
+    if (!accessToken || updatingCategoryId || deletingCategoryId) {
+      return;
+    }
+
+    const normalizedEmoji = emoji.trim();
+
+    if (normalizedEmoji === (category.emoji ?? '')) {
+      return;
+    }
+
+    try {
+      setUpdatingCategoryId(category.id);
+      setCategoryActionErrorMessage(null);
+
+      const updatedCategory = await categoryService.updateCategory(accessToken, category.id, {
+        name: category.name,
+        color: category.color,
+        emoji: normalizedEmoji || null,
+      });
+
+      setCategories((current) => addOrReplaceCategory(current, updatedCategory));
+    } catch (error) {
+      if (error instanceof HttpClientError && error.status === 401) {
+        logout();
+        return;
+      }
+
+      setCategoryActionErrorMessage(
+        error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel atualizar a categoria.',
       );
     } finally {
       setUpdatingCategoryId(null);
@@ -691,6 +737,7 @@ export function useTasksPageState({
     isLoadingCategories,
     isLoadingSummary,
     newCategoryColor,
+    newCategoryEmoji,
     newCategoryName,
     pendingTaskAction,
     summaryErrorMessage,
@@ -699,6 +746,7 @@ export function useTasksPageState({
     updatingCategoryId,
     viewMode,
     setNewCategoryColor,
+    setNewCategoryEmoji,
     setNewCategoryName,
     setViewMode,
     handleCancelEdit,
@@ -716,6 +764,7 @@ export function useTasksPageState({
     handleTaskDragEnd,
     handleTaskDragStart,
     handleUpdateCategoryColor,
+    handleUpdateCategoryEmoji,
     handleUpdateCategoryName,
     handleUpdateTask,
   };

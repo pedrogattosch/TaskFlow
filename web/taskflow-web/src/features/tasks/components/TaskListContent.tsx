@@ -22,6 +22,7 @@ export function TaskListContent({
   isLoadingCategories,
   isLoading,
   newCategoryColor,
+  newCategoryEmoji,
   newCategoryName,
   onCancelEdit,
   onChangeEditValue,
@@ -31,6 +32,7 @@ export function TaskListContent({
   onKanbanColumnDragOver,
   onKanbanColumnDrop,
   onNewCategoryColorChange,
+  onNewCategoryEmojiChange,
   onNewCategoryNameChange,
   onStartEdit,
   onTaskDragEnd,
@@ -170,6 +172,7 @@ export function TaskListContent({
                         isCreatingCategory={isCreatingCategory}
                         isLoadingCategories={isLoadingCategories}
                         newCategoryColor={newCategoryColor}
+                        newCategoryEmoji={newCategoryEmoji}
                         newCategoryName={newCategoryName}
                         onCancelEdit={onCancelEdit}
                         onChangeEditValue={onChangeEditValue}
@@ -177,6 +180,7 @@ export function TaskListContent({
                         onChangeTaskStatus={onChangeTaskStatus}
                         onDeleteTask={onDeleteTask}
                         onNewCategoryColorChange={onNewCategoryColorChange}
+                        onNewCategoryEmojiChange={onNewCategoryEmojiChange}
                         onNewCategoryNameChange={onNewCategoryNameChange}
                         onStartEdit={onStartEdit}
                         onTaskDragEnd={onTaskDragEnd}
@@ -214,6 +218,7 @@ export function TaskListContent({
               isCreatingCategory={isCreatingCategory}
               isLoadingCategories={isLoadingCategories}
               newCategoryColor={newCategoryColor}
+              newCategoryEmoji={newCategoryEmoji}
               newCategoryName={newCategoryName}
               onCancelEdit={onCancelEdit}
               onChangeEditValue={onChangeEditValue}
@@ -221,6 +226,7 @@ export function TaskListContent({
               onChangeTaskStatus={onChangeTaskStatus}
               onDeleteTask={onDeleteTask}
               onNewCategoryColorChange={onNewCategoryColorChange}
+              onNewCategoryEmojiChange={onNewCategoryEmojiChange}
               onNewCategoryNameChange={onNewCategoryNameChange}
               onStartEdit={onStartEdit}
               onTaskDragEnd={onTaskDragEnd}

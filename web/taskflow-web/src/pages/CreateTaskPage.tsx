@@ -4,6 +4,7 @@ import { BrandMark } from '../components/BrandMark';
 import { Button, ButtonLink } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
 import { CategoryColorInput } from '../features/tasks/components/CategoryColorInput';
+import { CategoryEmojiPicker } from '../features/tasks/components/CategoryEmojiPicker';
 import { categoryService } from '../services/categoryService';
 import { HttpClientError } from '../services/httpClient';
 import { taskService } from '../services/taskService';
@@ -43,6 +44,7 @@ export function CreateTaskPage() {
   const [categories, setCategories] = useState<CategoryListItem[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState(defaultCategoryColor);
+  const [newCategoryEmoji, setNewCategoryEmoji] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [categoryErrorMessage, setCategoryErrorMessage] = useState<string | null>(null);
@@ -118,12 +120,14 @@ export function CreateTaskPage() {
       const createdCategory = await categoryService.createCategory(session.accessToken, {
         name: normalizedName,
         color: newCategoryColor,
+        emoji: newCategoryEmoji.trim() || null,
       });
 
       setCategories((current) => addOrReplaceCategory(current, createdCategory));
       setValues((current) => ({ ...current, categoryId: createdCategory.id }));
       setNewCategoryName('');
       setNewCategoryColor(defaultCategoryColor);
+      setNewCategoryEmoji('');
       setErrors((current) => ({ ...current, categoryId: undefined }));
     } catch (error) {
       if (error instanceof HttpClientError && error.status === 401) {
@@ -312,12 +316,14 @@ export function CreateTaskPage() {
             isCreatingCategory={isCreatingCategory}
             isLoadingCategories={isLoadingCategories}
             newCategoryColor={newCategoryColor}
+            newCategoryEmoji={newCategoryEmoji}
             newCategoryName={newCategoryName}
             onCategoryChange={(categoryId) => {
               setValues((current) => ({ ...current, categoryId }));
             }}
             onCreateCategory={handleCreateCategory}
             onNewCategoryColorChange={setNewCategoryColor}
+            onNewCategoryEmojiChange={setNewCategoryEmoji}
             onNewCategoryNameChange={setNewCategoryName}
             selectId="categoryId"
             selectedCategoryId={values.categoryId}
@@ -346,10 +352,12 @@ type CategorySelectorProps = {
   isCreatingCategory: boolean;
   isLoadingCategories: boolean;
   newCategoryColor: string;
+  newCategoryEmoji: string;
   newCategoryName: string;
   onCategoryChange: (categoryId: string) => void;
   onCreateCategory: () => void;
   onNewCategoryColorChange: (color: string) => void;
+  onNewCategoryEmojiChange: (emoji: string) => void;
   onNewCategoryNameChange: (name: string) => void;
   selectId: string;
   selectedCategoryId: string;
@@ -363,10 +371,12 @@ function CategorySelector({
   isCreatingCategory,
   isLoadingCategories,
   newCategoryColor,
+  newCategoryEmoji,
   newCategoryName,
   onCategoryChange,
   onCreateCategory,
   onNewCategoryColorChange,
+  onNewCategoryEmojiChange,
   onNewCategoryNameChange,
   selectId,
   selectedCategoryId,
@@ -390,7 +400,7 @@ function CategorySelector({
         </option>
         {categories.map((category) => (
           <option key={category.id} value={category.id}>
-            {category.name}
+            {category.emoji ? `${category.emoji} ${category.name}` : category.name}
           </option>
         ))}
       </select>
@@ -408,6 +418,13 @@ function CategorySelector({
         </span>
       )}
       <div className="task-form__inline-action">
+        <CategoryEmojiPicker
+          className="task-form__emoji-picker"
+          value={newCategoryEmoji}
+          disabled={disabled || isCreatingCategory}
+          ariaLabel="Emoji da nova categoria"
+          onChange={onNewCategoryEmojiChange}
+        />
         <input
           type="text"
           maxLength={80}

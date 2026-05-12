@@ -25,6 +25,9 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.Property(category => category.Color)
             .HasMaxLength(20);
 
+        builder.Property(category => category.Emoji)
+            .HasMaxLength(16);
+
         builder.HasIndex(category => new { category.UserId, category.Name })
             .IsUnique();
 

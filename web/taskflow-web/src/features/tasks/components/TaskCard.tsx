@@ -21,6 +21,7 @@ export function TaskCard({
   isCreatingCategory,
   isLoadingCategories,
   newCategoryColor,
+  newCategoryEmoji,
   newCategoryName,
   onCancelEdit,
   onChangeEditValue,
@@ -28,6 +29,7 @@ export function TaskCard({
   onChangeTaskStatus,
   onDeleteTask,
   onNewCategoryColorChange,
+  onNewCategoryEmojiChange,
   onNewCategoryNameChange,
   onStartEdit,
   onTaskDragEnd,
@@ -62,11 +64,13 @@ export function TaskCard({
           isLoadingCategories={isLoadingCategories}
           isLoading={isUpdating}
           newCategoryColor={newCategoryColor}
+          newCategoryEmoji={newCategoryEmoji}
           newCategoryName={newCategoryName}
           onCancel={onCancelEdit}
           onChange={onChangeEditValue}
           onCreateCategory={onCreateCategory}
           onNewCategoryColorChange={onNewCategoryColorChange}
+          onNewCategoryEmojiChange={onNewCategoryEmojiChange}
           onNewCategoryNameChange={onNewCategoryNameChange}
           onSubmit={(event) => onUpdateTask(event, task.id)}
           taskId={task.id}
@@ -104,6 +108,11 @@ export function TaskCard({
               <dd>
                 <span className="task-card__category-chip">
                   <span className="task-card__category-dot" aria-hidden="true" />
+                  {category?.emoji && (
+                    <span className="task-card__category-emoji" aria-hidden="true">
+                      {category.emoji}
+                    </span>
+                  )}
                   {task.categoryName ?? 'Sem categoria'}
                 </span>
               </dd>

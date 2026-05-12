@@ -52,6 +52,7 @@ public sealed class UpdateCategoryUseCase : IUpdateCategoryUseCase
         }
 
         category.UpdateColor(request.Color);
+        category.UpdateEmoji(request.Emoji);
 
         await _categoryRepository.UpdateAsync(category, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -83,5 +84,8 @@ public sealed class UpdateCategoryUseCase : IUpdateCategoryUseCase
 
         if (!string.IsNullOrWhiteSpace(request.Color) && request.Color.Trim().Length > 20)
             throw new ApplicationValidationException("A cor da categoria deve ter no máximo 20 caracteres.");
+
+        if (!string.IsNullOrWhiteSpace(request.Emoji) && request.Emoji.Trim().Length > 16)
+            throw new ApplicationValidationException("O emoji da categoria deve ter no máximo 16 caracteres.");
     }
 }

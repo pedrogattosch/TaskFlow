@@ -77,24 +77,28 @@ public class ApiEndpointTests : IClassFixture<CustomWebApplicationFactory>
         var createResponse = await _client.PostAsJsonAsync("/api/categories", new
         {
             name = "Trabalho",
-            color = "#336699"
+            color = "#336699",
+            emoji = "💼"
         });
 
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
         var createdCategory = await createResponse.Content.ReadFromJsonAsync<CategoryResponse>();
         Assert.NotNull(createdCategory);
         Assert.Equal("Trabalho", createdCategory.Name);
+        Assert.Equal("💼", createdCategory.Emoji);
 
         var updateResponse = await _client.PutAsJsonAsync($"/api/categories/{createdCategory.Id}", new
         {
             name = createdCategory.Name,
-            color = "#27675d"
+            color = "#27675d",
+            emoji = "📌"
         });
 
         Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
         var updatedCategory = await updateResponse.Content.ReadFromJsonAsync<CategoryResponse>();
         Assert.NotNull(updatedCategory);
         Assert.Equal("#27675d", updatedCategory.Color);
+        Assert.Equal("📌", updatedCategory.Emoji);
 
         var listResponse = await _client.GetAsync("/api/categories");
 
@@ -103,7 +107,8 @@ public class ApiEndpointTests : IClassFixture<CustomWebApplicationFactory>
         Assert.NotNull(categories);
         Assert.Contains(categories, category =>
             category.Id == createdCategory.Id &&
-            category.Color == "#27675d");
+            category.Color == "#27675d" &&
+            category.Emoji == "📌");
 
         var deleteResponse = await _client.DeleteAsync($"/api/categories/{createdCategory.Id}");
 

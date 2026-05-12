@@ -9,6 +9,7 @@ public class Category
     public Guid UserId { get; private set; }
     public string Name { get; private set; }
     public string? Color { get; private set; }
+    public string? Emoji { get; private set; }
     public AuditInfo AuditInfo { get; private set; }
 
     protected Category()
@@ -17,7 +18,7 @@ public class Category
         AuditInfo = new AuditInfo();
     }
 
-    public Category(Guid userId, string name, string? color = null)
+    public Category(Guid userId, string name, string? color = null, string? emoji = null)
     {
         if (userId == Guid.Empty)
             throw new DomainException("O usuário da categoria é obrigatório.");
@@ -29,6 +30,7 @@ public class Category
         UserId = userId;
         Name = name.Trim();
         Color = string.IsNullOrWhiteSpace(color) ? null : color.Trim();
+        Emoji = string.IsNullOrWhiteSpace(emoji) ? null : emoji.Trim();
         AuditInfo = new AuditInfo();
     }
 
@@ -44,6 +46,12 @@ public class Category
     public void UpdateColor(string? color)
     {
         Color = string.IsNullOrWhiteSpace(color) ? null : color.Trim();
+        AuditInfo.Touch();
+    }
+
+    public void UpdateEmoji(string? emoji)
+    {
+        Emoji = string.IsNullOrWhiteSpace(emoji) ? null : emoji.Trim();
         AuditInfo.Touch();
     }
 }

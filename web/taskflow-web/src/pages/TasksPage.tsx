@@ -28,6 +28,7 @@ export function TasksPage() {
     isLoadingCategories,
     isLoadingSummary,
     newCategoryColor,
+    newCategoryEmoji,
     newCategoryName,
     pendingTaskAction,
     summaryErrorMessage,
@@ -36,6 +37,7 @@ export function TasksPage() {
     updatingCategoryId,
     viewMode,
     setNewCategoryColor,
+    setNewCategoryEmoji,
     setNewCategoryName,
     setViewMode,
     handleCancelEdit,
@@ -53,6 +55,7 @@ export function TasksPage() {
     handleTaskDragEnd,
     handleTaskDragStart,
     handleUpdateCategoryColor,
+    handleUpdateCategoryEmoji,
     handleUpdateCategoryName,
     handleUpdateTask,
   } = useTasksPageState({
@@ -75,6 +78,7 @@ export function TasksPage() {
           isLoading={isLoadingCategories}
           onDeleteCategory={handleDeleteCategory}
           onUpdateCategoryColor={handleUpdateCategoryColor}
+          onUpdateCategoryEmoji={handleUpdateCategoryEmoji}
           onUpdateCategoryName={handleUpdateCategoryName}
           updatingCategoryId={updatingCategoryId}
         />
@@ -118,6 +122,7 @@ export function TasksPage() {
           isLoadingCategories={isLoadingCategories}
           isLoading={isLoading}
           newCategoryColor={newCategoryColor}
+          newCategoryEmoji={newCategoryEmoji}
           newCategoryName={newCategoryName}
           onCancelEdit={handleCancelEdit}
           onChangeEditValue={handleChangeEditValue}
@@ -127,6 +132,7 @@ export function TasksPage() {
           onKanbanColumnDragOver={handleKanbanColumnDragOver}
           onKanbanColumnDrop={handleKanbanColumnDrop}
           onNewCategoryColorChange={setNewCategoryColor}
+          onNewCategoryEmojiChange={setNewCategoryEmoji}
           onNewCategoryNameChange={setNewCategoryName}
           onStartEdit={handleStartEdit}
           onTaskDragEnd={handleTaskDragEnd}
