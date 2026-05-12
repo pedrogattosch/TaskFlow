@@ -8,7 +8,7 @@ import type {
   TaskViewSelectorProps,
 } from '../types';
 import { CategoryColorInput } from './CategoryColorInput';
-import { CategoryEmojiPicker } from './CategoryEmojiPicker';
+import { CategoryEmojiPicker, defaultCategoryEmoji } from './CategoryEmojiPicker';
 import { TaskIcon } from './TaskIcon';
 import { categoryColorStyle } from '../utils';
 
@@ -31,6 +31,7 @@ function CategorySummaryItem({
 }) {
   const [draftName, setDraftName] = useState(category.name);
   const [draftEmoji, setDraftEmoji] = useState(category.emoji ?? '');
+  const [isEditing, setIsEditing] = useState(false);
   const isBusy = updatingCategoryId === category.id || deletingCategoryId === category.id;
 
   useEffect(() => {
@@ -67,53 +68,74 @@ function CategorySummaryItem({
   }
 
   return (
-    <li style={categoryColorStyle(category.color)}>
-      <span className="categories-panel__swatch" aria-hidden="true" />
-      <CategoryEmojiPicker
-        className="categories-panel__emoji-picker"
-        value={draftEmoji}
-        ariaLabel={`Emoji da categoria ${category.name}`}
-        disabled={isBusy}
-        onChange={(emoji) => {
-          setDraftEmoji(emoji);
-          onUpdateCategoryEmoji(category, emoji);
-        }}
-      />
-      <input
-        className="categories-panel__name-input"
-        type="text"
-        maxLength={80}
-        value={draftName}
-        aria-label={`Nome da categoria ${category.name}`}
-        disabled={isBusy}
-        onChange={(event) => setDraftName(event.target.value)}
-        onBlur={commitNameChange}
-        onKeyDown={handleNameKeyDown}
-      />
-      <span className="categories-panel__actions">
-        <CategoryColorInput
-          className="categories-panel__icon-control"
-          value={category.color}
-          ariaLabel={`Editar cor da categoria ${category.name}`}
-          iconName="pencil"
-          iconOnly
-          showPreview={false}
-          disabled={isBusy}
-          onChange={(color) => onUpdateCategoryColor(category, color)}
-        />
+    <li
+      className={isEditing ? 'categories-panel__item categories-panel__item--editing' : 'categories-panel__item'}
+      style={categoryColorStyle(category.color)}
+    >
+      <div className="categories-panel__item-header">
+        <span className="categories-panel__visual">
+          <span className="categories-panel__emoji" aria-hidden="true">
+            {category.emoji || defaultCategoryEmoji}
+          </span>
+          <span className="categories-panel__name">{category.name}</span>
+        </span>
         <Button
           className="categories-panel__icon-button"
           type="button"
           variant="secondary"
-          icon={<TaskIcon name="trash" />}
-          onClick={() => onDeleteCategory(category)}
+          icon={<TaskIcon name="pencil" />}
+          onClick={() => setIsEditing((current) => !current)}
           disabled={isBusy}
-          aria-label={`Excluir categoria ${category.name}`}
-          title={`Excluir categoria ${category.name}`}
+          aria-label={`Editar categoria ${category.name}`}
+          title={`Editar categoria ${category.name}`}
         >
-          {deletingCategoryId === category.id ? 'Excluindo...' : 'Excluir'}
+          Editar
         </Button>
-      </span>
+      </div>
+
+      {isEditing && (
+        <div className="categories-panel__edit">
+          <CategoryEmojiPicker
+            className="categories-panel__emoji-picker"
+            value={draftEmoji}
+            ariaLabel={`Emoji da categoria ${category.name}`}
+            disabled={isBusy}
+            onChange={(emoji) => {
+              setDraftEmoji(emoji);
+              onUpdateCategoryEmoji(category, emoji);
+            }}
+          />
+          <input
+            className="categories-panel__name-input"
+            type="text"
+            maxLength={80}
+            value={draftName}
+            aria-label={`Nome da categoria ${category.name}`}
+            disabled={isBusy}
+            onChange={(event) => setDraftName(event.target.value)}
+            onBlur={commitNameChange}
+            onKeyDown={handleNameKeyDown}
+          />
+          <CategoryColorInput
+            className="categories-panel__icon-control"
+            value={category.color}
+            ariaLabel={`Editar cor da categoria ${category.name}`}
+            iconOnly
+            disabled={isBusy}
+            onChange={(color) => onUpdateCategoryColor(category, color)}
+          />
+          <Button
+            className="categories-panel__delete-button"
+            type="button"
+            variant="destructive"
+            icon={<TaskIcon name="trash" />}
+            onClick={() => onDeleteCategory(category)}
+            disabled={isBusy}
+          >
+            {deletingCategoryId === category.id ? 'Excluindo...' : 'Excluir'}
+          </Button>
+        </div>
+      )}
     </li>
   );
 }

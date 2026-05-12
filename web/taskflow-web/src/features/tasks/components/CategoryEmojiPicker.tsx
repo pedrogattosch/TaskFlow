@@ -15,6 +15,8 @@ const categoryEmojiOptions = [
   '❤️',
 ];
 
+export const defaultCategoryEmoji = categoryEmojiOptions[0];
+
 type CategoryEmojiPickerProps = {
   ariaLabel: string;
   className?: string;
@@ -67,7 +69,7 @@ export function CategoryEmojiPicker({
         disabled={disabled}
         onClick={() => setIsOpen((current) => !current)}
       >
-        {normalizedValue || 'Icone'}
+        {normalizedValue || defaultCategoryEmoji}
       </button>
 
       {isOpen && !disabled && (

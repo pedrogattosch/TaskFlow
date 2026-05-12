@@ -438,9 +438,7 @@ function CategorySelector({
           className="task-form__color-picker"
           value={newCategoryColor}
           ariaLabel="Cor da nova categoria"
-          iconName="pencil"
           iconOnly
-          showPreview={false}
           disabled={disabled || isCreatingCategory}
           onChange={onNewCategoryColorChange}
         />
