@@ -2,13 +2,15 @@
   <img src="docs/assets/taskflow-header.png" alt="TaskFlow - Organize tarefas, acompanhe progresso e aumente sua produtividade" width="100%">
 </p>
 
+🏗️ Projeto em desenvolvimento...
+
 # TaskFlow
 
 TaskFlow é uma aplicação web para gerenciamento de tarefas com autenticação por JWT, API em ASP.NET Core, front-end em React e persistência em SQL Server. O projeto está organizado em camadas para separar domínio, casos de uso, infraestrutura, API, interface web e testes.
 
 ## Stack
 
-- Back-end:`.NET`, `ASP.NET Core` e `Swagger`
+- Back-end: `.NET`, `ASP.NET Core` e `Swagger`
 - Front-end: `React`, `TypeScript` e `Vite`
 - Banco de dados: `Entity Framework Core` e `SQL Server`
 - Autenticação: `JWT`
@@ -215,8 +217,8 @@ API disponível em:
 
 ### 6. Instalar dependências do front-end
 
-```powershell
-Set-Location web/taskflow-web
+```cmd
+cd web/taskflow-web
 npm install
 ```
 
@@ -305,6 +307,6 @@ docker compose --env-file deploy/.env -f deploy/docker-compose.yml --profile tes
 
 ## Documentação complementar
 
-- [docs/vision.md](/C:/Users/pedro/dev/TaskFlow/docs/vision.md)
-- [docs/architecture.md](/C:/Users/pedro/dev/TaskFlow/docs/architecture.md)
-- [docs/backlog.md](/C:/Users/pedro/dev/TaskFlow/docs/backlog.md)
+- [docs/vision.md](docs/vision.md)
+- [docs/architecture.md](docs/architecture.md)
+- [docs/backlog.md](docs/backlog.md)
